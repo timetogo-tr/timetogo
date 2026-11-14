@@ -46,6 +46,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #ttgKart .kb::after{content:" ▾";font-size:10px;color:var(--soluk);margin-left:3px}
 #ttgKart.kucuk .kb::after{content:" ▸"}
 #ttgKart.kucuk .islem .sat{display:none}
+#ttgKart .girildi{display:flex;align-items:center;gap:4px;padding:2px 8px;margin:2px 4px;border-radius:3px;background:#1b5e20;color:#b9f6ca;font-size:12px;font-weight:700;white-space:nowrap;animation:gir 1.6s ease-in-out infinite}
+@keyframes gir{50%{background:#2e7d32}}
 #ttgKart .islem{cursor:pointer;display:flex;align-items:center;gap:12px;padding:4px 10px 4px 0;border-left:1px solid #131722;white-space:nowrap}
 #ttgKart .islem:hover{background:#252a37}
 #ttgKart .serit{width:3px;align-self:stretch}
@@ -592,6 +594,7 @@ function ttgKart() {
       <div class="sat"><span>Giriş</span><span>${f(i.alt)} - ${f(i.ust)}</span></div>
       <div class="sat"><span>Stop</span><span class="st">${f(i.stop)}</span></div>
       <div class="sat"><span>Hedef</span><span class="hd">${f(i.hedef)}</span></div>
+      ${i.girildi ? `<div class="girildi" title="Time to Go botu bu işleme ${esc(new Date(i.girildi.zaman).toLocaleTimeString("tr-TR", {timeZone: "Europe/Istanbul", hour: "2-digit", minute: "2-digit"}))} (TR) girdi">✅ İşleme girildi · ${f(i.girildi.fiyat)}</div>` : ""}
       <div class="not">${esc(i.not || "")}</div>
       ${i.coin !== sembol ? '<div class="git">Grafiği açmak için tıkla</div>' : ""}</div>`;
   }
@@ -650,6 +653,7 @@ function ttgGrafik() {
     ttgCizgiler.push(mum.createPriceLine({price: i.stop, color: "#ef5350", lineWidth: 1, lineStyle: L.Dashed, title: "Stop"}));
     ttgCizgiler.push(mum.createPriceLine({price: (i.alt + i.ust) / 2, color: i.yon === "SHORT" ? "#ff2bd6" : "#39ff88", lineWidth: 1, lineStyle: L.SparseDotted, title: "Giriş", axisLabelVisible: true}));
     ttgCizgiler.push(mum.createPriceLine({price: i.hedef, color: "#26a69a", lineWidth: 1, lineStyle: L.Dashed, title: "Hedef"}));
+    if (i.girildi) ttgCizgiler.push(mum.createPriceLine({price: i.girildi.fiyat, color: "#00e676", lineWidth: 2, lineStyle: L.Solid, title: "✅ Girildi", axisLabelVisible: true}));
   }
 }
 setInterval(() => { const n = document.getElementById("nokta"); if (n) n.textContent = [".", "..", "...", ""][Math.floor(Date.now() / 1000) % 4]; }, 1000);
