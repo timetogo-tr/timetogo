@@ -1,6 +1,18 @@
 {
-  "guncelleme": "2026-11-14T05:32:24+03:00",
-  "islemler": [],
+  "guncelleme": "2026-11-14T12:55:09+03:00",
+  "islemler": [
+    {
+      "coin": "DOT",
+      "yon": "SHORT",
+      "alt": 0.7917,
+      "ust": 0.7958,
+      "stop": 0.79826,
+      "hedef": 0.7789,
+      "bitis": "2026-11-15T09:45+03:00",
+      "not": "Bölgeye yavaş gelirse short. Yapı bozulursa işlem iptal edilir.",
+      "yayin": "2026-11-14T12:55:09+03:00"
+    }
+  ],
   "iptaller": [
     {
       "coin": "ARB",
