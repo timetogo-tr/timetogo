@@ -1,5 +1,5 @@
 {
-  "guncelleme": "2026-11-15T00:38:01+03:00",
+  "guncelleme": "2026-11-15T00:50:59+03:00",
   "islemler": [
     {
       "coin": "TIA",
@@ -10,7 +10,11 @@
       "hedef": 0.3271,
       "bitis": "2026-11-16T00:00+03:00",
       "not": "Bölgeye yavaş gelirse short. Yapı bozulursa işlem iptal edilir.",
-      "yayin": "2026-11-15T00:38:01+03:00"
+      "yayin": "2026-11-15T00:38:01+03:00",
+      "girildi": {
+        "zaman": "2026-11-15T00:50:59+03:00",
+        "fiyat": 0.3369
+      }
     }
   ],
   "iptaller": [
