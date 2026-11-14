@@ -143,6 +143,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     <span class="ayrac"></span>
     <button class="ub" id="gostergeBtn">ƒx Göstergeler</button>
     <button class="ub" id="sesBtn">🔕 Sesi aç</button>
+    <button class="ub" id="muzikBtn" title="Tarayıcıda üretilen house / tekno döngüsü (telifsiz)">🎵 Müzik</button>
     <button class="ub" id="listeAc">☰ Liste</button>
     <span id="ustUyari">Yatırım tavsiyesi değildir · Paylaşımlar tamamen eğitim ve eğlence amaçlıdır</span>
     <span id="saat"></span>
@@ -192,6 +193,74 @@ async function islemleriOku() {
     if (JSON.stringify(liste) !== JSON.stringify(ISLEMLER)) { ISLEMLER = liste; ttgKart(); ttgGrafik(); listeKur(); }
     if (yeniler.length) yeniIslemUyari(yeniler);
   } catch (e) {}
+}
+
+// ---- muzik: tarayicida uretilen 124 BPM house / tekno dongusu (dosya yok, telifsiz). Alarm bipleri ustune biner. ----
+const MZ = {acik: false, ctx: null, ana: null, adim: 0, sonraki: 0, zam: null, bpm: 124, gurultu: null};
+function mzKur() {
+  const c = MZ.ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const komp = c.createDynamicsCompressor(); komp.threshold.value = -14; komp.ratio.value = 4;
+  MZ.ana = c.createGain(); MZ.ana.gain.value = 0.32; MZ.ana.connect(komp); komp.connect(c.destination);
+  const b = c.createBuffer(1, c.sampleRate, c.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  MZ.gurultu = b;
+}
+function mzKick(t) {
+  const c = MZ.ctx, o = c.createOscillator(), g = c.createGain();
+  o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+  g.gain.setValueAtTime(1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+  o.connect(g); g.connect(MZ.ana); o.start(t); o.stop(t + 0.4);
+}
+function mzGurultu(t, sure, frek, tip, ses) {
+  const c = MZ.ctx, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+  s.buffer = MZ.gurultu; f.type = tip; f.frequency.value = frek;
+  g.gain.setValueAtTime(ses, t); g.gain.exponentialRampToValueAtTime(0.001, t + sure);
+  s.connect(f); f.connect(g); g.connect(MZ.ana); s.start(t); s.stop(t + sure + 0.02);
+}
+function mzNota(t, frek, sure, tip, ses, kesim) {
+  const c = MZ.ctx, o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+  o.type = tip; o.frequency.value = frek; f.type = "lowpass"; f.Q.value = 8;
+  f.frequency.setValueAtTime(kesim, t); f.frequency.exponentialRampToValueAtTime(kesim / 4, t + sure);
+  g.gain.setValueAtTime(ses, t); g.gain.exponentialRampToValueAtTime(0.001, t + sure);
+  o.connect(f); f.connect(g); g.connect(MZ.ana); o.start(t); o.stop(t + sure + 0.02);
+}
+const MZ_BAS = [55, 0, 55, 110, 0, 55, 0, 65.41, 55, 0, 55, 110, 0, 49, 0, 49];   // A1 kok, 16'lik
+const MZ_AKOR = [[220, 261.63, 329.63], [196, 246.94, 293.66], [174.61, 220, 261.63], [196, 246.94, 329.63]];  // Am G F G
+function mzAdim(i, t) {
+  const bar = Math.floor(i / 16) % 4, s = i % 16, k = Math.floor(i / 64) % 8;
+  if (s % 4 === 0) mzKick(t);
+  if (s % 4 === 2) mzGurultu(t, 0.06, 8000, "highpass", 0.35);                     // acik hi-hat (offbeat)
+  else if (k >= 1) mzGurultu(t, 0.02, 10000, "highpass", 0.08);                    // kapali hi-hat
+  if (k >= 2 && (s === 4 || s === 12)) mzGurultu(t, 0.15, 1500, "bandpass", 0.6);  // clap
+  if (k >= 1 && MZ_BAS[s]) mzNota(t, MZ_BAS[s] * (bar === 2 ? 0.89 : 1), 0.18, "sawtooth", 0.35, 900);
+  if (k >= 2 && (s === 3 || s === 10)) {
+    const kes = 900 + 700 * Math.sin(i / 40);
+    for (const f of MZ_AKOR[bar]) mzNota(t, f, 0.22, "sawtooth", 0.07, kes + 600);
+  }
+}
+function mzZamanla() {
+  const ad = 60 / MZ.bpm / 4;
+  while (MZ.sonraki < MZ.ctx.currentTime + 0.12) { mzAdim(MZ.adim, MZ.sonraki); MZ.adim++; MZ.sonraki += ad; }
+}
+function muzikDugme() {
+  const b = document.getElementById("muzikBtn"); if (!b) return;
+  b.textContent = MZ.acik ? "🎵 Müzik açık" : "🎵 Müzik";
+  b.classList.toggle("secili", MZ.acik);
+}
+function muzik() {
+  try {
+    if (!MZ.ctx) mzKur();
+    MZ.acik = !MZ.acik;
+    if (MZ.acik) {
+      MZ.ctx.resume(); MZ.adim = 0; MZ.sonraki = MZ.ctx.currentTime + 0.05;
+      MZ.ana.gain.setTargetAtTime(0.32, MZ.ctx.currentTime, 0.05);
+      MZ.zam = setInterval(mzZamanla, 25);
+    } else {
+      clearInterval(MZ.zam); MZ.ana.gain.setTargetAtTime(0.0001, MZ.ctx.currentTime, 0.05);
+      setTimeout(() => { if (!MZ.acik) MZ.ctx.suspend(); }, 300);
+    }
+  } catch (e) {}
+  muzikDugme();
 }
 
 // ---- yeni islem alarmi: bip bip bip bip + ust bildirim (tarayici sesi ilk dokunusta acilir) ----
@@ -876,6 +945,7 @@ $("#ara").oninput = gostergeListeKur;
 $("#sembolAd").onclick = () => $("#liste").classList.toggle("acik");
 let sesIlk = true;
 $("#sesBtn").onclick = () => { if (sesIlk || !(actx && actx.state === "running")) { sesIlk = false; sesAcik = true; } else sesAcik = !sesAcik; sesHazirla(); setTimeout(() => { sesDugme(); if (sesAcik) bip(); }, 150); };
+$("#muzikBtn").onclick = muzik;
 $("#listeAc").onclick =() => $("#liste").classList.toggle("acik");
 setInterval(() => $("#saat").textContent = new Date().toLocaleTimeString("tr-TR", {timeZone: "Europe/Istanbul"}) + " (TR)", 1000);
 
