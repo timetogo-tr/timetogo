@@ -1,19 +1,13 @@
 {
-  "guncelleme": "2026-11-14T23:17:09+03:00",
-  "islemler": [
+  "guncelleme": "2026-11-14T23:32:43+03:00",
+  "islemler": [],
+  "iptaller": [
     {
       "coin": "FIL",
       "yon": "SHORT",
-      "alt": 0.651,
-      "ust": 0.6667,
-      "stop": 0.66958,
-      "hedef": 0.6316,
-      "bitis": "2026-11-15T21:00+03:00",
-      "not": "Kademeli giriş: bölgenin alt kısmında küçük, üst kısmında (ana blok) büyük short. Yapı bozulursa işlem iptal edilir.",
-      "yayin": "2026-11-14T23:06:50+03:00"
-    }
-  ],
-  "iptaller": [
+      "neden": "girişe gelmeden hedefe gitti",
+      "zaman": "2026-11-14T23:32:43+03:00"
+    },
     {
       "coin": "SEI",
       "yon": "SHORT",
