@@ -86,6 +86,15 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #akisSat .al{color:#2ee88a}#akisSat .sa{color:#ff4d79}
 #akisSat .buyuk.al{background:rgba(46,232,138,.22);font-weight:700;text-shadow:0 0 6px #2ee88a}
 #akisSat .buyuk.sa{background:rgba(255,77,121,.22);font-weight:700;text-shadow:0 0 6px #ff4d79}
+#denge{padding:6px 8px 7px;border-bottom:1px solid #2a2e39;background:linear-gradient(180deg,rgba(255,43,214,.05),transparent)}
+#denge .dy{display:flex;justify-content:space-between;font:700 10px system-ui;letter-spacing:.05em}
+#dAl{color:#2ee88a;text-shadow:0 0 6px #2ee88a}#dSat{color:#ff4d79;text-shadow:0 0 6px #ff4d79}
+#denge .dc{position:relative;height:9px;margin-top:4px;border-radius:5px;background:#ff4d79;box-shadow:0 0 8px rgba(255,77,121,.6) inset,0 0 10px rgba(255,77,121,.35);overflow:visible}
+#dBar{position:absolute;left:0;top:0;bottom:0;width:50%;border-radius:5px 0 0 5px;background:linear-gradient(90deg,#0fae5f,#2ee88a);box-shadow:0 0 10px #2ee88a;transition:width .45s cubic-bezier(.2,.8,.2,1)}
+#dIgne{position:absolute;top:-4px;bottom:-4px;width:2px;left:50%;background:#fff;box-shadow:0 0 8px #fff,0 0 14px #ff2bd6;transition:left .45s cubic-bezier(.2,.8,.2,1)}
+#dBaski{margin-top:5px;text-align:center;font:700 11px system-ui;letter-spacing:.18em;color:#d1d4dc;transition:color .3s,text-shadow .3s}
+#dBaski.al{color:#2ee88a;text-shadow:0 0 10px #2ee88a}#dBaski.sa{color:#ff4d79;text-shadow:0 0 10px #ff4d79}
+#akis{background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px)}
 @keyframes akGel{from{transform:translateX(-30px);opacity:0}to{transform:none;opacity:1}}
 .satir .ttg{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--sari);margin-left:5px;vertical-align:middle}
 .art{color:var(--yesil)}.eks{color:var(--kirmizi)}
@@ -146,7 +155,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <div id="lejant"></div>
       <div id="durum"></div>
       <div id="ttgKart" hidden></div>
-      <div id="akis" hidden><div class="ab"><span class="nk"></span>CANLI AKIŞ</div><div id="akisSat"></div></div>
+      <div id="akis" hidden><div class="ab"><span class="nk"></span>CANLI AKIŞ</div><div id="denge"><div class="dy"><span id="dAl">ALIM 50%</span><span id="dSat">SATIM 50%</span></div><div class="dc"><div id="dBar"></div><div id="dIgne"></div></div><div id="dBaski">DENGE</div></div><div id="akisSat"></div></div>
       <div id="bildirim" hidden></div>
     </main>
     <aside id="liste">
@@ -505,12 +514,28 @@ function akisKur() {
   akisSem = sembol; akisTampon = []; akisOrt = 0; $("#akisSat").innerHTML = "";
   akisWs = new WebSocket(`wss://fstream.binance.com/market/ws/${sembol.toLowerCase()}usdt@aggTrade`);
   akisWs.onmessage = e => { const t = JSON.parse(e.data); akisTampon.push({p: +t.p, n: +t.p * +t.q, sat: t.m}); };
+  dAl = 0; dSa = 0;
   akisWs.onclose = () => { akisWs = null; setTimeout(akisKur, 3000); };
+}
+// alim/satim dengesi: son ~1 dakikanin hacmi (her 120 ms'de %0,2 soner), ibre alim payini gosterir
+let dAl = 0, dSa = 0;
+function dengeCiz() {
+  const top = dAl + dSa; if (!top) return;
+  const a = dAl / top * 100;
+  $("#dBar").style.width = a + "%"; $("#dIgne").style.left = `calc(${a}% - 1px)`;
+  $("#dAl").textContent = `ALIM ${a.toFixed(0)}%`; $("#dSat").textContent = `SATIM ${(100 - a).toFixed(0)}%`;
+  const b = $("#dBaski");
+  b.className = a >= 58 ? "al" : a <= 42 ? "sa" : "";
+  b.textContent = a >= 58 ? "▲ ALICI BASKIN" : a <= 42 ? "▼ SATICI BASKIN" : "◆ DENGE";
 }
 const kisa = n => n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : n.toFixed(0);
 setInterval(() => {
   if (!akisTampon.length || $("#akis").hidden) { akisTampon = []; return; }
-  const el = $("#akisSat"), yeni = akisTampon.splice(0).slice(-12);
+  const hepsi = akisTampon.splice(0);
+  dAl *= 0.995; dSa *= 0.995;
+  for (const t of hepsi) t.sat ? dSa += t.n : dAl += t.n;
+  dengeCiz();
+  const el = $("#akisSat"), yeni = hepsi.slice(-12);
   let h = "";
   for (const t of yeni.reverse()) {
     akisOrt = akisOrt ? akisOrt * 0.97 + t.n * 0.03 : t.n;
