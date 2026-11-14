@@ -1,5 +1,5 @@
 {
-  "guncelleme": "2026-11-14T03:46:47+03:00",
+  "guncelleme": "2026-11-14T04:45:26+03:00",
   "islemler": [
     {
       "coin": "SOL",
@@ -44,6 +44,17 @@
       "bitis": "2026-11-14T23:30:00+03:00",
       "not": "Bölgede tepki gelirse short. Yapı bozulursa işlem iptal edilir.",
       "yayin": "2026-11-14T03:46:47+03:00"
+    },
+    {
+      "coin": "ARB",
+      "yon": "SHORT",
+      "alt": 0.14486,
+      "ust": 0.1453,
+      "stop": 0.1463,
+      "hedef": 0.1416,
+      "bitis": "2026-11-14T15:00:00+03:00",
+      "not": "Açılış aralığının dibine geri testte tutunamazsa short. Yapı bozulursa işlem iptal edilir.",
+      "yayin": "2026-11-14T04:45:26+03:00"
     }
   ]
 }
