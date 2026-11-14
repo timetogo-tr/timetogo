@@ -1,19 +1,13 @@
 {
-  "guncelleme": "2026-11-14T05:32:20+03:00",
-  "islemler": [
+  "guncelleme": "2026-11-14T05:32:24+03:00",
+  "islemler": [],
+  "iptaller": [
     {
       "coin": "ARB",
       "yon": "SHORT",
-      "alt": 0.14486,
-      "ust": 0.1453,
-      "stop": 0.1463,
-      "hedef": 0.1416,
-      "bitis": "2026-11-14T15:00:00+03:00",
-      "not": "Açılış aralığının dibine geri testte tutunamazsa short. Yapı bozulursa işlem iptal edilir.",
-      "yayin": "2026-11-14T04:45:26+03:00"
-    }
-  ],
-  "iptaller": [
+      "neden": "girişe gelmeden hedefe gitti",
+      "zaman": "2026-11-14T05:32:24+03:00"
+    },
     {
       "coin": "WIF",
       "yon": "SHORT",
