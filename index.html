@@ -260,7 +260,7 @@ const GOSTERGELER = [
   {k:"atr", ad:"ATR", ac:"Ortalama gerçek aralık (14) - alt bölüm", grup:"Osilatörler"},
   {k:"tul", ad:"Trend Tülü", ac:"Yumuşak trend eğrisi: düşüşte pembe, yükselişte yeşil tül", grup:"Sistem"},
   {k:"hp", ad:"Hacim Profili", ac:"Fiyat seviyelerine göre hacim (alım/satım), en yoğun fiyat (POC)", grup:"Sistem"},
-  {k:"lik", ad:"Likidasyon Seviyeleri", ac:"Kaldıraçlı pozisyonların tahmini patlama fiyatları (25x-50x-100x)", grup:"Sistem"},
+  {k:"lik", ad:"Likidasyon Seviyeleri", ac:"Kaldıraçlı pozisyonların tahmini patlama bölgeleri (10x-100x), yoğunluğa göre toplu", grup:"Sistem"},
 ];
 const ALTLAR = ["rsi", "macd", "stoch", "atr"];
 const ALT_AD = {rsi: "RSI 14", macd: "MACD 12 26 9", stoch: "Stok RSI 14 14 3 3", atr: "ATR 14"};
@@ -694,12 +694,27 @@ function likBul() {
     const g = (b.high + b.low + b.close) / 3, k = b.v / vs[i - 1];
     for (const [x, w] of KAL) { ac.push({i, p: g * (1 + 1 / x), ust: true, w: k * w, x}); ac.push({i, p: g * (1 - 1 / x), ust: false, w: k * w, x}); }
   }
-  const son = bars[n - 1].close;
-  const ust = ac.filter(l => l.ust).sort((a, b) => a.p - b.p).slice(0, 14);
-  const alt = ac.filter(l => !l.ust).sort((a, b) => b.p - a.p).slice(0, 14);
-  const eski = biten.filter(l => l.j > n - 200).sort((a, b) => b.w - a.w).slice(0, 16);
-  const hep = ust.concat(alt, eski), mx = Math.max(1, ...hep.map(l => l.w));
-  return hep.map(l => ({...l, o: 0.3 + 0.7 * Math.min(1, l.w / mx)}));
+  // 14.11 (uye onerisi): tek tek nokta yerine toplu goster -> yakin seviyeler fiyat bantlarina toplanir,
+  // bandin yogunlugu = icindeki seviyelerin agirlik toplami. Her yonde en yogun 4 acik bant + son 200 mumda alinan 3 bant.
+  const son = bars[n - 1].close, ADIM = son * 0.003, AZAMI = son * 0.012;
+  const kumele = (liste, ust) => {
+    const s = liste.slice().sort((a, b) => a.p - b.p), out = [];
+    for (const l of s) {
+      const k = out[out.length - 1];
+      if (k && l.p - k.son <= ADIM && l.p - k.lo <= AZAMI) { k.son = l.p; k.hi = l.p; k.w += l.w; k.say++; k.i = Math.min(k.i, l.i); k.j = l.j == null || k.j == null ? null : Math.max(k.j, l.j); }
+      else out.push({lo: l.p, hi: l.p, son: l.p, w: l.w, say: 1, i: l.i, j: l.j ?? null, ust});
+    }
+    return out;
+  };
+  const ab = kumele(ac.filter(l => l.ust), true).concat(kumele(ac.filter(l => !l.ust), false));
+  const acik = ["u", "a"].flatMap(y => ab.filter(b => b.ust === (y === "u")).sort((a, b) => b.w - a.w).slice(0, 4));
+  const eski = kumele(biten.filter(l => l.j > n - 200 && l.ust), true).concat(kumele(biten.filter(l => l.j > n - 200 && !l.ust), false))
+    .sort((a, b) => b.w - a.w).slice(0, 3);
+  const hep = acik.concat(eski), mx = Math.max(1, ...hep.map(b => b.w));
+  return hep.map(b => {
+    const m = (b.lo + b.hi) / 2, yar = Math.max((b.hi - b.lo) / 2, son * 0.0006);
+    return {...b, lo: m - yar, hi: m + yar, o: Math.min(1, b.w / mx)};
+  });
 }
 function sistemCiz(W, H) {
   let s = "";
@@ -742,14 +757,19 @@ function sistemCiz(W, H) {
     const pp = h.lo + (h.poc + 0.5) * h.st, yp = Y(pp);
     if (yp != null) s += `<line x1="${x0}" x2="${xs}" y1="${yp}" y2="${yp}" stroke="rgba(255,255,255,.85)" stroke-width="1.5"/>` + metin(x0 + 4, yp - 3, `POC ${f(pp, ondalik)}`, "rgba(255,255,255,.9)", "start");
   }
-  for (const l of likListe) {
-    const x1 = xi(l.i), y = Y(l.p);
-    if (x1 == null || y == null) continue;
-    const x2 = l.j != null ? xi(l.j) : W, r = l.ust ? (l.x >= 50 ? "91,156,246" : "38,198,218") : (l.x >= 50 ? "171,71,188" : "236,64,122");
-    const op = l.j != null ? 0.35 : 0.85, rr = 3.5 + 5 * l.o;
-    s += `<line x1="${x1}" x2="${x2}" y1="${y}" y2="${y}" stroke="rgba(${r},${op})" stroke-width="${l.j != null ? 1 : 1.5}"/>` +
-      `<circle cx="${x1}" cy="${y}" r="${(rr * 1.8).toFixed(1)}" fill="rgba(${r},${(0.18 + 0.2 * l.o).toFixed(2)})"/><circle cx="${x1}" cy="${y}" r="${rr.toFixed(1)}" fill="rgba(${r},${(op * 0.9).toFixed(2)})"/>` +
-      (l.j != null ? `<circle cx="${x2}" cy="${y}" r="2.5" fill="rgba(${r},.7)"/>` : "");
+  for (const b of likListe) {
+    const y1 = Y(b.hi), y2 = Y(b.lo);
+    if (y1 == null || y2 == null) continue;
+    let x1 = xi(b.i); if (x1 == null || x1 < 0) x1 = 0;
+    const alindi = b.j != null, x2 = alindi ? (xi(b.j) ?? W) : W;
+    const r = b.ust ? "91,156,246" : "236,64,122", yy = Math.min(y1, y2), hh = Math.max(3, Math.abs(y2 - y1));
+    const a = alindi ? 0.08 + 0.10 * b.o : 0.14 + 0.40 * b.o;
+    s += `<rect x="${x1}" y="${yy}" width="${Math.max(0, x2 - x1)}" height="${hh}" fill="rgba(${r},${a.toFixed(2)})" stroke="rgba(${r},${alindi ? .35 : .85})" stroke-width="1"${alindi ? ' stroke-dasharray="3 3"' : ""}/>`;
+    if (!alindi) {
+      const yog = b.o > 0.66 ? "yüksek" : b.o > 0.33 ? "orta" : "düşük";
+      const yz = `${b.ust ? "Short" : "Long"} likidasyon · ${yog} · ${f(b.lo)}–${f(b.hi)}`;
+      s += metin(Math.max(4, W - 10 - yz.length * 6.8), yy + hh / 2 + 4, yz, `rgba(${r},1)`, "start", "rgba(19,23,34,.75)");
+    } else s += metin(x2 + 4, yy + hh / 2 + 4, "alındı", `rgba(${r},.7)`, "start");
   }
 
   // alt bolum basliklari ve ayraclari
