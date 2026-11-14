@@ -18,6 +18,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .ub{padding:5px 8px;border-radius:4px;white-space:nowrap;color:var(--yazi)}
 .ub:hover{background:var(--panel2)}
 .ub.secili{color:var(--mavi);font-weight:600}
+#ytKutu{position:fixed;left:12px;bottom:12px;z-index:60;background:#131722;border:1px solid #2a2e39;border-radius:8px;padding:6px;box-shadow:0 6px 24px #0008}
+#ytKutu header{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#b2b5be;margin-bottom:4px;gap:8px}
+#ytKutu header button{background:none;border:0;color:#b2b5be;cursor:pointer;font-size:14px}
+#ytKutu iframe{display:block;width:240px;height:135px;border:0;border-radius:4px}
 #sembolAd{font-weight:700}
 #saat{margin-left:auto;color:var(--soluk);white-space:nowrap;padding-left:8px}
 #listeAc{display:none}
@@ -144,6 +148,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     <button class="ub" id="gostergeBtn">ƒx Göstergeler</button>
     <button class="ub" id="sesBtn">🔕 Sesi aç</button>
     <button class="ub" id="muzikBtn" title="Tarayıcıda üretilen house / tekno döngüsü (telifsiz)">🎵 Müzik</button>
+    <button class="ub" id="ytBtn" style="display:none" title="YouTube linki yapıştır, şarkı panelde çalsın">▶ YouTube</button>
     <button class="ub" id="listeAc">☰ Liste</button>
     <span id="ustUyari">Yatırım tavsiyesi değildir · Paylaşımlar tamamen eğitim ve eğlence amaçlıdır</span>
     <span id="saat"></span>
@@ -244,7 +249,7 @@ function mzZamanla() {
 }
 function muzikDugme() {
   const b = document.getElementById("muzikBtn"); if (!b) return;
-  b.textContent = MZ.acik ? "🎵 Müzik açık" : "🎵 Müzik";
+  b.textContent = MZ.acik ? "⏹ Müziği durdur" : "🎵 Müzik";
   b.classList.toggle("secili", MZ.acik);
 }
 function muzik() {
@@ -261,6 +266,30 @@ function muzik() {
     }
   } catch (e) {}
   muzikDugme();
+}
+
+// ---- YouTube: ziyaretci kendi sectigi sarkinin linkini yapistirir, kucuk oynaticida calar (link yalniz bu tarayicida saklanir) ----
+function ytId(u) {
+  u = (u || "").trim();
+  const m = u.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/|\/live\/)([A-Za-z0-9_-]{11})/) || u.match(/^([A-Za-z0-9_-]{11})$/);
+  return m ? m[1] : null;
+}
+function ytKapat() { const k = document.getElementById("ytKutu"); if (k) k.remove(); const b = document.getElementById("ytBtn"); if (b) { b.textContent = "▶ YouTube"; b.classList.remove("secili"); } muzikDugme(); }
+function ytCal() {
+  let son = ""; try { son = localStorage.getItem("ttg_yt") || ""; } catch (e) {}
+  const u = prompt("YouTube şarkı linkini yapıştır:", son);
+  if (u === null) return;
+  const id = ytId(u);
+  if (!id) { alert("Geçerli bir YouTube linki değil."); return; }
+  try { localStorage.setItem("ttg_yt", u.trim()); } catch (e) {}
+  if (MZ.acik) muzik();   // dahili tekno calıyorsa durdur
+  ytKapat();
+  const k = document.createElement("div"); k.id = "ytKutu";
+  k.innerHTML = `<header><span>▶ YouTube</span><span><button title="Başka şarkı" id="ytDegis">⟳</button><button title="Kapat" id="ytX">✕</button></span></header>` +
+    `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&rel=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+  document.body.appendChild(k);
+  k.querySelector("#ytX").onclick = ytKapat; k.querySelector("#ytDegis").onclick = ytCal;
+  const b = document.getElementById("ytBtn"); b.textContent = "⏹ YouTube'u durdur"; b.classList.add("secili"); const mb = document.getElementById("muzikBtn"); mb.textContent = "⏹ Müziği durdur"; mb.classList.add("secili");
 }
 
 // ---- yeni islem alarmi: bip bip bip bip + ust bildirim (tarayici sesi ilk dokunusta acilir) ----
@@ -945,7 +974,12 @@ $("#ara").oninput = gostergeListeKur;
 $("#sembolAd").onclick = () => $("#liste").classList.toggle("acik");
 let sesIlk = true;
 $("#sesBtn").onclick = () => { if (sesIlk || !(actx && actx.state === "running")) { sesIlk = false; sesAcik = true; } else sesAcik = !sesAcik; sesHazirla(); setTimeout(() => { sesDugme(); if (sesAcik) bip(); }, 150); };
-$("#muzikBtn").onclick = muzik;
+$("#muzikBtn").onclick = () => { if (document.getElementById("ytKutu")) { ytKapat(); return; } muzik(); };   // calan ne varsa once durur
+document.addEventListener("keydown", e => { if (e.key === "Escape") { ytKapat(); if (MZ.acik) muzik(); } });
+// YouTube butonu yalniz yonetici tarayicisinda: bir kez ?dj=1 ile acilinca hatirlanir, ?dj=0 kaldirir
+try { const q = new URLSearchParams(location.search).get("dj"); if (q === "1") localStorage.setItem("ttg_dj", "1"); if (q === "0") localStorage.removeItem("ttg_dj");
+  if (localStorage.getItem("ttg_dj") === "1") document.getElementById("ytBtn").style.display = ""; } catch (e) {}
+$("#ytBtn").onclick = () => document.getElementById("ytKutu") ? ytKapat() : ytCal();
 $("#listeAc").onclick =() => $("#liste").classList.toggle("acik");
 setInterval(() => $("#saat").textContent = new Date().toLocaleTimeString("tr-TR", {timeZone: "Europe/Istanbul"}) + " (TR)", 1000);
 
