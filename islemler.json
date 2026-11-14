@@ -1,17 +1,6 @@
 {
-  "guncelleme": "2026-11-14T04:47:14+03:00",
+  "guncelleme": "2026-11-14T05:17:59+03:00",
   "islemler": [
-    {
-      "coin": "SUI",
-      "yon": "SHORT",
-      "alt": 0.805,
-      "ust": 0.81,
-      "stop": 0.8185,
-      "hedef": 0.786,
-      "bitis": "2026-11-14T23:30:00+03:00",
-      "not": "Bölgeye yavaş yükselişle gelirse short. Yapı bozulursa işlem iptal edilir. 2. hedef 0,7800",
-      "yayin": "2026-11-14T03:30:00+03:00"
-    },
     {
       "coin": "ETC",
       "yon": "SHORT",
@@ -47,6 +36,12 @@
     }
   ],
   "iptaller": [
+    {
+      "coin": "SUI",
+      "yon": "SHORT",
+      "neden": "girişe gelmeden hedefe gitti",
+      "zaman": "2026-11-14T05:17:59+03:00"
+    },
     {
       "coin": "SOL",
       "yon": "SHORT",
