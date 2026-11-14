@@ -1,6 +1,18 @@
 {
-  "guncelleme": "2026-11-14T16:03:02+03:00",
-  "islemler": [],
+  "guncelleme": "2026-11-14T20:11:22+03:00",
+  "islemler": [
+    {
+      "coin": "TIA",
+      "yon": "SHORT",
+      "alt": 0.3561,
+      "ust": 0.3588,
+      "stop": 0.36042,
+      "hedef": 0.3466,
+      "bitis": "2026-11-15T19:15+03:00",
+      "not": "Bölgeye yavaş gelirse short. Yapı bozulursa işlem iptal edilir.",
+      "yayin": "2026-11-14T20:11:22+03:00"
+    }
+  ],
   "iptaller": [
     {
       "coin": "DOT",
