@@ -1,0 +1,843 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time to Go Panel</title>
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root{--bg:#000;--panel:#0f1117;--panel2:#161a23;--cizgi:#2a2e39;--yazi:#d1d4dc;--soluk:#8a90a0;--yesil:#26a69a;--kirmizi:#ef5350;--mavi:#2962ff;--sari:#facc15}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--yazi);font:13px/1.35 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+#app{display:flex;flex-direction:column;height:100%}
+#ust{display:flex;align-items:center;gap:4px;height:44px;padding:0 8px;background:var(--panel);border-bottom:1px solid var(--cizgi);flex:none;overflow-x:auto;scrollbar-width:none}
+#ust::-webkit-scrollbar{display:none}
+.logo{font-weight:800;color:var(--sari);letter-spacing:.5px;margin-right:8px;white-space:nowrap}
+.ayrac{width:1px;height:22px;background:var(--cizgi);margin:0 4px;flex:none}
+.ub{padding:5px 8px;border-radius:4px;white-space:nowrap;color:var(--yazi)}
+.ub:hover{background:var(--panel2)}
+.ub.secili{color:var(--mavi);font-weight:600}
+#sembolAd{font-weight:700}
+#saat{margin-left:auto;color:var(--soluk);white-space:nowrap;padding-left:8px}
+#listeAc{display:none}
+#govde{flex:1;display:flex;min-height:0}
+#araclar{width:46px;flex:none;background:var(--panel);border-right:1px solid var(--cizgi);display:flex;flex-direction:column;align-items:center;padding-top:6px;gap:2px}
+.arac{width:36px;height:36px;border-radius:4px;display:grid;place-items:center;color:var(--yazi)}
+.arac:hover{background:var(--panel2)}
+.arac.secili{background:#1e2a4a;color:#5b8cff}
+.arac svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.5}
+.arac-ayrac{width:26px;height:1px;background:var(--cizgi);margin:4px 0}
+#grafikAlan{flex:1;position:relative;min-width:0}
+#grafik{position:absolute;inset:0}
+#cizim{position:absolute;left:0;top:0;pointer-events:none;overflow:hidden;z-index:2}
+#cizim.aktif{pointer-events:auto;cursor:crosshair}
+#lejant{position:absolute;left:10px;top:8px;z-index:3;pointer-events:none;font-size:13px;white-space:nowrap}
+#lejant .baslik{font-weight:600;margin-right:8px}
+#lejant .d{margin-right:8px}
+#lejant .gl{color:var(--soluk);font-size:12px;margin-top:3px}
+#durum{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);color:var(--soluk);z-index:3;pointer-events:none}
+#ttgKart{position:absolute;right:76px;top:6px;z-index:4;display:flex;flex-wrap:wrap;align-items:stretch;max-width:calc(100% - 420px);background:rgba(30,34,45,.94);border:1px solid #131722;border-radius:4px;overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,.5)}
+#ttgKart .kb{color:var(--sari);font-size:13px;display:flex;align-items:center;padding:4px 10px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap}
+#ttgKart .kb::after{content:" ▾";font-size:10px;color:var(--soluk);margin-left:3px}
+#ttgKart.kucuk .kb::after{content:" ▸"}
+#ttgKart.kucuk .islem .sat{display:none}
+#ttgKart .islem{cursor:pointer;display:flex;align-items:center;gap:12px;padding:4px 10px 4px 0;border-left:1px solid #131722;white-space:nowrap}
+#ttgKart .islem:hover{background:#252a37}
+#ttgKart .serit{width:3px;align-self:stretch}
+#ttgKart .l .serit{background:var(--yesil)}#ttgKart .s .serit{background:var(--kirmizi)}
+#ttgKart .ust{display:flex;gap:6px;align-items:center;font-size:13px}
+#ttgKart .ust b{color:#fff;font-weight:600}
+#ttgKart .l .yon{color:var(--yesil)}#ttgKart .s .yon{color:var(--kirmizi)}
+#ttgKart .sat{display:flex;gap:5px;font-size:12px}
+#ttgKart .sat span:first-child{color:var(--soluk)}
+#ttgKart .sat .st{color:#ef9a9a}#ttgKart .sat .hd{color:#80cbc4}
+#ttgKart .not,#ttgKart .git{display:none}
+#ttgKart .ara{color:#fff;font-size:13px;display:flex;align-items:center;padding:4px 10px;border-left:1px solid #131722}
+#ttgKart .uyari{color:var(--soluk);font-size:10px;display:flex;align-items:center;padding:4px 8px;border-left:1px solid #131722;white-space:nowrap}
+#sesBtn.uyar{color:var(--sari)}
+#bildirim{position:absolute;left:50%;top:40px;transform:translateX(-50%);z-index:6;display:flex;flex-direction:column;gap:6px;max-width:calc(100% - 24px)}
+#bildirim[hidden]{display:none}
+#bildirim div{padding:10px 16px;border-radius:6px;color:#fff;font-size:14px;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.6);animation:yanip 1s ease-in-out 6}
+#bildirim .l{background:#1b5e57}#bildirim .s{background:#8e2b2a}
+@keyframes yanip{50%{filter:brightness(1.6)}}
+#liste{width:270px;flex:none;background:var(--panel);border-left:1px solid var(--cizgi);display:flex;flex-direction:column;min-height:0}
+#liste h3{margin:0;padding:10px 12px;font-size:14px;border-bottom:1px solid var(--cizgi)}
+.lb{display:grid;grid-template-columns:1fr 92px 64px;padding:5px 12px;color:var(--soluk);font-size:11px;border-bottom:1px solid var(--cizgi)}
+.lb span:not(:first-child),.satir span:not(:first-child){text-align:right}
+#satirlar{overflow-y:auto;flex:1}
+.satir{display:grid;grid-template-columns:1fr 92px 64px;padding:7px 12px;cursor:pointer;align-items:center}
+.satir:hover{background:var(--panel2)}
+.satir.secili{background:#1e2a4a}
+.satir b{font-weight:600}
+.satir.ttgS{animation:yanS 1.4s ease-in-out infinite}.satir.ttgL{animation:yanL 1.4s ease-in-out infinite}
+@keyframes yanS{0%,100%{background:rgba(239,83,80,.05)}50%{background:rgba(239,83,80,.42)}}
+@keyframes yanL{0%,100%{background:rgba(38,166,154,.05)}50%{background:rgba(38,166,154,.42)}}
+.satir.ttgS b{color:#ff8a80}.satir.ttgL b{color:#80cbc4}
+#listeAc.ttgS{animation:yanS 1.4s ease-in-out infinite}#listeAc.ttgL{animation:yanL 1.4s ease-in-out infinite}
+#ustUyari{margin-left:auto;color:#d1a64a;font-size:11px;white-space:nowrap;padding-left:8px}
+#ustUyari+#saat{margin-left:0}
+#bildirim .iptal{background:#4a4f5c}
+#akis{position:absolute;left:8px;top:46px;z-index:3;width:158px;max-height:calc(100% - 150px);overflow:hidden;background:rgba(13,16,24,.78);border:1px solid #2a2e39;border-radius:6px;font:11px/1.25 ui-monospace,Consolas,monospace;pointer-events:none}
+#akis[hidden]{display:none}
+#akis .ab{color:#d1d4dc;font:600 10px system-ui;letter-spacing:.08em;padding:5px 8px;border-bottom:1px solid #2a2e39;display:flex;align-items:center;gap:6px}
+#akis .nk{width:7px;height:7px;border-radius:50%;background:#ff2bd6;box-shadow:0 0 6px #ff2bd6;animation:yanip 1s infinite}
+#akisSat div{display:flex;justify-content:space-between;padding:1px 8px;animation:akGel .18s ease-out}
+#akisSat .al{color:#2ee88a}#akisSat .sa{color:#ff4d79}
+#akisSat .buyuk.al{background:rgba(46,232,138,.22);font-weight:700;text-shadow:0 0 6px #2ee88a}
+#akisSat .buyuk.sa{background:rgba(255,77,121,.22);font-weight:700;text-shadow:0 0 6px #ff4d79}
+@keyframes akGel{from{transform:translateX(-30px);opacity:0}to{transform:none;opacity:1}}
+.satir .ttg{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--sari);margin-left:5px;vertical-align:middle}
+.art{color:var(--yesil)}.eks{color:var(--kirmizi)}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20;display:grid;place-items:center}
+#modal[hidden]{display:none}
+.kutu{width:min(520px,calc(100vw - 32px));max-height:min(560px,calc(100vh - 60px));background:#1e222d;border-radius:8px;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--cizgi)}
+.kutu header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;font-size:17px;font-weight:600}
+.kutu input{margin:0 16px 10px;padding:9px 10px;background:#131722;border:1px solid var(--cizgi);border-radius:4px;color:var(--yazi);font:inherit}
+.kutu .gr{color:var(--soluk);font-size:11px;padding:8px 16px 4px;text-transform:uppercase;letter-spacing:.5px}
+.kutu .og{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;cursor:pointer}
+.kutu .og:hover{background:#2a2e39}
+.kutu .og small{display:block;color:var(--soluk);font-size:11px}
+.kutu .og .tik{color:var(--mavi);font-weight:700}
+.kutu .ic{overflow-y:auto;padding-bottom:10px}
+#govde{position:relative}
+@media (max-width:760px){
+  #ust{flex-wrap:wrap;height:auto;padding:4px 6px;row-gap:2px}
+  #araliklar{order:10;width:100%;overflow-x:auto;scrollbar-width:none}
+  #araliklar::-webkit-scrollbar{display:none}
+  #araliklar .ub{padding:5px 9px}
+  .ayrac,#saat,#ustUyari{display:none}
+  #akis{width:118px;top:40px;font-size:10px;max-height:40%}
+  .logo{font-size:12px;margin-right:2px}
+  #gostergeBtn{margin-left:auto}
+  #liste{position:absolute;right:0;top:0;bottom:0;z-index:10;display:none;width:min(270px,85vw);box-shadow:-6px 0 20px rgba(0,0,0,.6)}
+  #liste.acik{display:flex}
+  #listeAc{display:block}
+  #araclar{width:36px}
+  .arac{width:30px;height:30px}
+  .arac svg{width:19px;height:19px}
+  #ttgKart{left:44px;right:auto;top:24px;max-width:calc(100% - 100px)}
+  #ttgKart .islem{flex-wrap:wrap;gap:2px 8px;white-space:normal}
+  #ttgKart .sat{font-size:11px}
+  #lejant{left:6px;top:4px;font-size:11px}
+  #lejant .ohlc{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="ust">
+    <span class="logo">TIME TO GO</span>
+    <button class="ub" id="sembolAd" title="Coin listesi">BTCUSDT.P</button>
+    <span class="ayrac"></span>
+    <span id="araliklar" style="display:flex;gap:2px"></span>
+    <span class="ayrac"></span>
+    <button class="ub" id="gostergeBtn">ƒx Göstergeler</button>
+    <button class="ub" id="sesBtn">🔕 Sesi aç</button>
+    <button class="ub" id="listeAc">☰ Liste</button>
+    <span id="ustUyari">Yatırım tavsiyesi değildir · Paylaşımlar tamamen eğitim ve eğlence amaçlıdır</span>
+    <span id="saat"></span>
+  </div>
+  <div id="govde">
+    <nav id="araclar"></nav>
+    <main id="grafikAlan">
+      <div id="grafik"></div>
+      <svg id="cizim"></svg>
+      <div id="lejant"></div>
+      <div id="durum"></div>
+      <div id="ttgKart" hidden></div>
+      <div id="akis" hidden><div class="ab"><span class="nk"></span>CANLI AKIŞ</div><div id="akisSat"></div></div>
+      <div id="bildirim" hidden></div>
+    </main>
+    <aside id="liste">
+      <h3>İzleme listesi</h3>
+      <div class="lb"><span>Sembol</span><span>Son</span><span>Değ%</span></div>
+      <div id="satirlar"></div>
+    </aside>
+  </div>
+</div>
+<div id="modal" hidden>
+  <div class="kutu">
+    <header><span>Göstergeler</span><button id="modalKapat" style="font-size:20px">✕</button></header>
+    <input id="ara" placeholder="Ara" autocomplete="off">
+    <div class="ic" id="gostergeListe"></div>
+  </div>
+</div>
+<script>
+// Aktif islemler islemler.json dosyasindan okunur (her islemde yalniz o dosya guncellenir), 30 sn'de bir yenilenir.
+// alanlar: coin (BTC / 1000PEPE ...), yon (LONG/SHORT), alt, ust, stop, hedef, bitis (ISO saat), not
+let ISLEMLER = [];
+let gorulen = null; // ilk okumada mevcut islemler "gorulmus" sayilir, sonra gelen her yeni islem bip bip calar
+async function islemleriOku() {
+  try {
+    const r = await fetch("islemler.json?t=" + Date.now(), {cache: "no-store"});
+    if (!r.ok) return;
+    const d = await r.json();
+    const liste = d.islemler || [];
+    const anahtar = i => [i.coin, i.yon, i.alt, i.ust, i.stop, i.hedef].join("|");
+    const yeniler = [];
+    if (gorulen === null) { gorulen = new Set(liste.map(anahtar)); if (liste.some(i => new Date(i.bitis).getTime() > Date.now())) aktif.ttg = true; }
+    else for (const i of liste) if (!gorulen.has(anahtar(i))) { gorulen.add(anahtar(i)); if (new Date(i.bitis).getTime() > Date.now()) yeniler.push(i); }
+    const kalkan = ISLEMLER.filter(i => new Date(i.bitis).getTime() > Date.now() && !liste.some(y => anahtar(y) === anahtar(i)) && !liste.some(y => y.coin === i.coin));
+    if (kalkan.length && gorulen) iptalUyari(kalkan, d.iptaller || []);
+    if (JSON.stringify(liste) !== JSON.stringify(ISLEMLER)) { ISLEMLER = liste; ttgKart(); ttgGrafik(); listeKur(); }
+    if (yeniler.length) yeniIslemUyari(yeniler);
+  } catch (e) {}
+}
+
+// ---- yeni islem alarmi: bip bip bip bip + ust bildirim (tarayici sesi ilk dokunusta acilir) ----
+let sesAcik = true, actx = null;
+function sesHazirla() {
+  try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume().then(sesDugme); } catch (e) {}
+  sesDugme();
+}
+function sesDugme() {
+  const b = document.getElementById("sesBtn"); if (!b) return;
+  const calisir = actx && actx.state === "running";
+  b.textContent = !calisir ? "🔕 Sesi aç" : sesAcik ? "🔔 Ses açık" : "🔕 Ses kapalı";
+  b.classList.toggle("uyar", !calisir || !sesAcik);
+}
+function bip() {
+  if (!sesAcik || !actx || actx.state !== "running") return;
+  for (let i = 0; i < 4; i++) {
+    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i * 0.28;
+    o.type = "square"; o.frequency.value = 1046;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.18, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + 0.18);
+  }
+}
+function yeniIslemUyari(yeniler) {
+  bip();
+  if (!aktif.ttg) { aktif.ttg = true; ttgKart(); ttgGrafik(); }
+  const el = document.getElementById("bildirim");
+  el.innerHTML = yeniler.map(i => `<div class="${i.yon === "SHORT" ? "s" : "l"}" data-coin="${esc(i.coin)}">🔔 YENİ İŞLEM: <b>${esc(i.coin)}USDT ${esc(i.yon)}</b> · Giriş ${f(i.alt)} - ${f(i.ust)}</div>`).join("");
+  el.hidden = false;
+  el.querySelectorAll("div").forEach(x => x.onclick = () => { sembolSec(x.dataset.coin); el.hidden = true; });
+  clearTimeout(yeniIslemUyari.z); yeniIslemUyari.z = setTimeout(() => el.hidden = true, 60000);
+  try { document.title = "🔔 YENİ İŞLEM - Time to Go"; setTimeout(() => document.title = "Time to Go Panel", 60000); } catch (e) {}
+}
+function iptalUyari(liste, neden) {
+  bip();
+  const el = document.getElementById("bildirim");
+  el.innerHTML = liste.map(i => { const n = neden.find(x => x.coin === i.coin); const hd = n && /hedef geldi/.test(n.neden); return `<div class="${hd ? "l" : "iptal"}" data-coin="${esc(i.coin)}">${hd ? "✔ HEDEF" : "✖ KAPANDI"}: <b>${esc(i.coin)}USDT ${esc(i.yon)}</b>${n ? " · " + esc(n.neden) : ""}</div>`; }).join("");
+  el.hidden = false;
+  clearTimeout(yeniIslemUyari.z); yeniIslemUyari.z = setTimeout(() => el.hidden = true, 60000);
+}
+document.addEventListener("pointerdown", sesHazirla);
+document.addEventListener("keydown", sesHazirla);
+
+const TZ = 3 * 3600; // grafik saatleri Turkiye saati
+const COINLER = ["BTC","ETH","SOL","XRP","BNB","DOGE","ADA","LINK","AVAX","SUI","1000PEPE","WIF","TRX","DOT","LTC","BCH","NEAR","APT","ARB","OP","INJ","TIA","SEI","FIL","ATOM","ETC","HBAR","AAVE","UNI","ENA"];
+const ARALIK = [
+  {ad:"1dk",api:"1m",sn:60},{ad:"2dk",api:"1m",sn:120},{ad:"3dk",api:"3m",sn:180},{ad:"5dk",api:"5m",sn:300},
+  {ad:"10dk",api:"5m",sn:600},{ad:"15dk",api:"15m",sn:900},{ad:"1s",api:"1h",sn:3600},{ad:"2s",api:"2h",sn:7200},
+  {ad:"4s",api:"4h",sn:14400},{ad:"1G",api:"1d",sn:86400}];
+const GOSTERGELER = [
+  {k:"ttg", ad:"Time to Go", ac:"Aktif işlem: giriş bölgesi, stop ve hedef", grup:"Özel"},
+  {k:"hacim", ad:"Hacim", ac:"İşlem hacmi", grup:"Teknik"},
+  {k:"ema20", ad:"EMA 20", ac:"Üstel hareketli ortalama (20)", grup:"Teknik"},
+  {k:"ema50", ad:"EMA 50", ac:"Üstel hareketli ortalama (50)", grup:"Teknik"},
+  {k:"ema200", ad:"EMA 200", ac:"Üstel hareketli ortalama (200)", grup:"Teknik"},
+  {k:"bb", ad:"Bollinger Bantları", ac:"20 periyot, 2 standart sapma", grup:"Teknik"},
+  {k:"vwap", ad:"VWAP", ac:"Hacim ağırlıklı ortalama fiyat (günlük)", grup:"Teknik"},
+  {k:"sma50", ad:"SMA 50", ac:"Basit hareketli ortalama (50)", grup:"Teknik"},
+  {k:"sma200", ad:"SMA 200", ac:"Basit hareketli ortalama (200)", grup:"Teknik"},
+  {k:"st", ad:"Supertrend", ac:"ATR 10, çarpan 3 - trend yönü", grup:"Teknik"},
+  {k:"ichi", ad:"Ichimoku", ac:"Tenkan 9, Kijun 26, Senkou 52", grup:"Teknik"},
+  {k:"pivot", ad:"Pivot Noktaları", ac:"Günlük klasik pivot: P, R1-R2, S1-S2", grup:"Teknik"},
+  {k:"rsi", ad:"RSI", ac:"Göreceli güç endeksi (14) - alt bölüm", grup:"Osilatörler"},
+  {k:"macd", ad:"MACD", ac:"12, 26, 9 - alt bölüm", grup:"Osilatörler"},
+  {k:"stoch", ad:"Stokastik RSI", ac:"14, 14, 3, 3 - alt bölüm", grup:"Osilatörler"},
+  {k:"atr", ad:"ATR", ac:"Ortalama gerçek aralık (14) - alt bölüm", grup:"Osilatörler"},
+  {k:"tul", ad:"Trend Tülü", ac:"Yumuşak trend eğrisi: düşüşte pembe, yükselişte yeşil tül", grup:"Sistem"},
+  {k:"hp", ad:"Hacim Profili", ac:"Fiyat seviyelerine göre hacim (alım/satım), en yoğun fiyat (POC)", grup:"Sistem"},
+  {k:"lik", ad:"Likidasyon Seviyeleri", ac:"Kaldıraçlı pozisyonların tahmini patlama fiyatları (25x-50x-100x)", grup:"Sistem"},
+];
+const ALTLAR = ["rsi", "macd", "stoch", "atr"];
+const ALT_AD = {rsi: "RSI 14", macd: "MACD 12 26 9", stoch: "Stok RSI 14 14 3 3", atr: "ATR 14"};
+const ARACLAR = [
+  {k:"imlec", ad:"İmleç", svg:'<path d="M5 3l14 8-6 1.5L10 19z"/>'},
+  {k:"trend", ad:"Trend çizgisi", svg:'<path d="M4 20L20 4"/><circle cx="4" cy="20" r="1.6"/><circle cx="20" cy="4" r="1.6"/>'},
+  {k:"yatay", ad:"Yatay çizgi", svg:'<path d="M2 12h20"/><circle cx="12" cy="12" r="1.6"/>'},
+  {k:"isin", ad:"Yatay ışın", svg:'<path d="M6 12h16"/><circle cx="6" cy="12" r="1.6"/>'},
+  {k:"kutu", ad:"Dikdörtgen", svg:'<rect x="4" y="6" width="16" height="12"/>'},
+  {k:"fib", ad:"Fibonacci düzeltmesi", svg:'<path d="M3 5h18M3 10h18M3 14h18M3 19h18"/>'},
+  {k:"long", ad:"Long pozisyon", svg:'<rect x="4" y="4" width="16" height="8" stroke="#26a69a"/><rect x="4" y="12" width="16" height="6" stroke="#ef5350"/>'},
+  {k:"short", ad:"Short pozisyon", svg:'<rect x="4" y="6" width="16" height="6" stroke="#ef5350"/><rect x="4" y="12" width="16" height="8" stroke="#26a69a"/>'},
+  {ayrac:true},
+  {k:"geri", ad:"Son çizimi geri al", svg:'<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>'},
+  {k:"sil", ad:"Bu coindeki tüm çizimleri sil", svg:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'},
+];
+
+const $ = s => document.querySelector(s);
+const kayitOku = (k, v) => { try { const x = localStorage.getItem(k); return x ? JSON.parse(x) : v; } catch (e) { return v; } };
+const kayitYaz = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+let sembol = kayitOku("ttg_sembol", "BTC");
+if (!COINLER.includes(sembol)) sembol = "BTC";
+let aralik = ARALIK.find(a => a.ad === kayitOku("ttg_aralik", "15dk")) || ARALIK[5];
+let aktif = Object.assign({ttg:true, lik:true, hp:false, tul:false, hacim:true, ema20:false, ema50:false, ema200:false, bb:false, vwap:false}, kayitOku("ttg_gosterge", {}));
+// 14.11 (grafik kalabalik) -> varsayilan yalniz likidasyon cizgileri; tul ve hacim profili bir kez kapatilir, isteyen acar
+try { if (!localStorage.getItem("ttg_sade1")) { aktif.hp = false; aktif.tul = false; localStorage.setItem("ttg_sade1", "1"); } } catch (e) {}
+let cizimler = kayitOku("ttg_cizim", {});
+let bars = [], altlar = new Map(), kova = null, ondalik = 2, yukNo = 0, ws = null, arac = "imlec", taslak = null;
+const fiyatlar = {};
+
+const ondalikBul = p => p >= 1000 ? 1 : p >= 100 ? 2 : p >= 10 ? 3 : p >= 1 ? 4 : p >= 0.1 ? 5 : p >= 0.001 ? 6 : 8;
+const f = (p, d) => (p == null || isNaN(p)) ? "-" : Number(p).toLocaleString("tr-TR", {minimumFractionDigits: d ?? ondalikBul(p), maximumFractionDigits: d ?? ondalikBul(p)});
+
+// ---------------- grafik ----------------
+const grafikEl = $("#grafik");
+const chart = LightweightCharts.createChart(grafikEl, {
+  autoSize: true,
+  layout: {background: {type: "solid", color: "#000000"}, textColor: "#b2b5be", fontSize: 12},
+  grid: {vertLines: {color: "#15181f"}, horzLines: {color: "#15181f"}},
+  crosshair: {mode: LightweightCharts.CrosshairMode.Normal},
+  rightPriceScale: {borderColor: "#2a2e39", scaleMargins: {top: 0.08, bottom: 0.12}},
+  timeScale: {borderColor: "#2a2e39", timeVisible: true, secondsVisible: false, rightOffset: 12},
+  localization: {locale: "tr-TR", priceFormatter: p => f(p, ondalik)},
+});
+const mum = chart.addCandlestickSeries({upColor: "#26a69a", downColor: "#ef5350", borderVisible: false, wickUpColor: "#26a69a", wickDownColor: "#ef5350"});
+let hacim = null;
+const cizgiSeri = {};
+let ttgCizgiler = [];
+
+function birlestir(ham, sn) {
+  const out = [];
+  for (const x of ham) {
+    const b = Math.floor(x.t / sn) * sn + TZ;
+    const son = out[out.length - 1];
+    if (son && son.time === b) { son.high = Math.max(son.high, x.h); son.low = Math.min(son.low, x.l); son.close = x.c; son.v += x.v; }
+    else out.push({time: b, open: x.o, high: x.h, low: x.l, close: x.c, v: x.v});
+  }
+  return out;
+}
+
+async function yukle() {
+  const no = ++yukNo, ar = aralik, sym = sembol + "USDT";
+  if (ws) { ws.onclose = null; ws.close(); ws = null; }
+  $("#durum").textContent = "Yükleniyor...";
+  try {
+    const r = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${sym}&interval=${ar.api}&limit=1500`);
+    const d = await r.json();
+    if (no !== yukNo) return;
+    const ham = d.map(k => ({t: k[0] / 1000, o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5]}));
+    bars = birlestir(ham, ar.sn);
+    kova = bars[bars.length - 1].time - TZ;
+    altlar = new Map(ham.filter(x => Math.floor(x.t / ar.sn) * ar.sn === kova).map(x => [x.t, x]));
+    ondalik = ondalikBul(bars[bars.length - 1].close);
+    mum.applyOptions({priceFormat: {type: "price", precision: ondalik, minMove: Math.pow(10, -ondalik)}});
+    mum.setData(bars.map(b => ({time: b.time, open: b.open, high: b.high, low: b.low, close: b.close})));
+    chart.timeScale().applyOptions({timeVisible: ar.sn < 86400});
+    gostergeleriKur();
+    const n = bars.length;
+    chart.timeScale().setVisibleLogicalRange({from: n - 160, to: n + 12});
+    ttgGrafik();
+    pivotCiz();
+    lejant();
+    $("#durum").textContent = "";
+    canliBagla(no);
+  } catch (e) {
+    if (no !== yukNo) return;
+    $("#durum").textContent = "Veri alınamadı, tekrar deneniyor...";
+    setTimeout(() => { if (no === yukNo) yukle(); }, 5000);
+  }
+}
+
+function canliBagla(no) {
+  const ar = aralik;
+  ws = new WebSocket(`wss://fstream.binance.com/market/ws/${(sembol + "USDT").toLowerCase()}@kline_${ar.api}`);
+  ws.onmessage = e => {
+    if (no !== yukNo) return;
+    const k = JSON.parse(e.data).k;
+    const x = {t: k.t / 1000, o: +k.o, h: +k.h, l: +k.l, c: +k.c, v: +k.v};
+    const b = Math.floor(x.t / ar.sn) * ar.sn;
+    if (b !== kova) { kova = b; altlar = new Map(); }
+    altlar.set(x.t, x);
+    const s = [...altlar.values()].sort((a, c) => a.t - c.t);
+    const bar = {time: b + TZ, open: s[0].o, high: Math.max(...s.map(z => z.h)), low: Math.min(...s.map(z => z.l)), close: s[s.length - 1].c, v: s.reduce((a, z) => a + z.v, 0)};
+    const yeni = bars[bars.length - 1].time !== bar.time;
+    if (yeni) bars.push(bar); else bars[bars.length - 1] = bar;
+    mum.update({time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close});
+    if (hacim) hacim.update({time: bar.time, value: bar.v, color: bar.close >= bar.open ? "rgba(38,166,154,.4)" : "rgba(239,83,80,.4)"});
+    gostergeGuncelle();
+    lejant();
+  };
+  ws.onclose = () => { if (no === yukNo) setTimeout(() => { if (no === yukNo) canliBagla(no); }, 3000); };
+}
+
+// ---------------- gostergeler ----------------
+function ema(v, n) { const o = []; let e = null; const k = 2 / (n + 1); for (let i = 0; i < v.length; i++) { if (i < n - 1) { o.push(null); continue; } if (e === null) { e = v.slice(0, n).reduce((a, b) => a + b, 0) / n; } else e = v[i] * k + e * (1 - k); o.push(e); } return o; }
+function bolli(v, n, m) { const u = [], o = [], a = []; for (let i = 0; i < v.length; i++) { if (i < n - 1) { u.push(null); o.push(null); a.push(null); continue; } const s = v.slice(i - n + 1, i + 1); const ort = s.reduce((x, y) => x + y, 0) / n; const sd = Math.sqrt(s.reduce((x, y) => x + (y - ort) ** 2, 0) / n); o.push(ort); u.push(ort + m * sd); a.push(ort - m * sd); } return [u, o, a]; }
+function vwap() { const o = []; let gun = null, pv = 0, vv = 0; for (const b of bars) { const g = Math.floor((b.time) / 86400); if (g !== gun) { gun = g; pv = 0; vv = 0; } const tp = (b.high + b.low + b.close) / 3; pv += tp * b.v; vv += b.v; o.push(vv ? pv / vv : null); } return o; }
+const satirlaYap = arr => arr.map((v, i) => v == null ? {time: bars[i].time} : {time: bars[i].time, value: v});
+
+function seriAl(k, renk, w = 1) {
+  if (!cizgiSeri[k]) cizgiSeri[k] = chart.addLineSeries({color: renk, lineWidth: w, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+  return cizgiSeri[k];
+}
+function seriSil(k) { if (cizgiSeri[k]) { chart.removeSeries(cizgiSeri[k]); delete cizgiSeri[k]; } }
+
+function gostergeleriKur() {
+  if (aktif.hacim) {
+    if (!hacim) { hacim = chart.addHistogramSeries({priceFormat: {type: "volume"}, priceScaleId: "hacim", lastValueVisible: false, priceLineVisible: false}); chart.priceScale("hacim").applyOptions({scaleMargins: {top: 0.84, bottom: 0}}); }
+    hacim.setData(bars.map(b => ({time: b.time, value: b.v, color: b.close >= b.open ? "rgba(38,166,154,.4)" : "rgba(239,83,80,.4)"})));
+  } else if (hacim) { chart.removeSeries(hacim); hacim = null; }
+  gostergeGuncelle(true);
+  ttgKart();
+}
+// ---- ek gostergeler: hesaplar ----
+function sma(v, n) { const o = []; let s = 0; for (let i = 0; i < v.length; i++) { s += v[i]; if (i >= n) s -= v[i - n]; o.push(i >= n - 1 ? s / n : null); } return o; }
+function rma(v, n) { const o = []; let e = null; for (let i = 0; i < v.length; i++) { if (v[i] == null) { o.push(null); continue; } if (e === null) { if (i >= n - 1 && v.slice(i - n + 1, i + 1).every(x => x != null)) e = v.slice(i - n + 1, i + 1).reduce((a, b) => a + b, 0) / n; o.push(e); } else { e = (e * (n - 1) + v[i]) / n; o.push(e); } } return o; }
+function rsiHesap(c, n = 14) { const u = [null], d = [null]; for (let i = 1; i < c.length; i++) { const x = c[i] - c[i - 1]; u.push(Math.max(x, 0)); d.push(Math.max(-x, 0)); } const au = rma(u, n), ad = rma(d, n); return au.map((a, i) => a == null || ad[i] == null ? null : ad[i] === 0 ? 100 : 100 - 100 / (1 + a / ad[i])); }
+function trHesap() { return bars.map((b, i) => i === 0 ? b.high - b.low : Math.max(b.high - b.low, Math.abs(b.high - bars[i - 1].close), Math.abs(b.low - bars[i - 1].close))); }
+function emaN(v, n) { const o = []; let e = null; const k = 2 / (n + 1); let say = 0, top = 0; for (const x of v) { if (x == null) { o.push(null); continue; } if (e === null) { top += x; say++; if (say === n) e = top / n; o.push(e); } else { e = x * k + e * (1 - k); o.push(e); } } return o; }
+function stochRsi(c) { const r = rsiHesap(c, 14), k = []; for (let i = 0; i < r.length; i++) { const s = r.slice(Math.max(0, i - 13), i + 1); if (i < 13 || s.some(x => x == null)) { k.push(null); continue; } const mn = Math.min(...s), mx = Math.max(...s); k.push(mx === mn ? 0 : (r[i] - mn) / (mx - mn) * 100); } const ks = smaNull(k, 3); return [ks, smaNull(ks, 3)]; }
+function smaNull(v, n) { return v.map((x, i) => { if (i < n - 1) return null; const s = v.slice(i - n + 1, i + 1); return s.some(z => z == null) ? null : s.reduce((a, b) => a + b, 0) / n; }); }
+function supertrend(n = 10, m = 3) { const atr = rma(trHesap(), n), o = []; let ust = null, alt = null, yon = 1; for (let i = 0; i < bars.length; i++) { const b = bars[i]; if (atr[i] == null) { o.push(null); continue; } const hl = (b.high + b.low) / 2; let u = hl + m * atr[i], a = hl - m * atr[i]; const onc = i > 0 ? bars[i - 1].close : b.close; if (ust !== null) { u = (u < ust || onc > ust) ? u : ust; a = (a > alt || onc < alt) ? a : alt; if (yon === 1 && b.close < a) yon = -1; else if (yon === -1 && b.close > u) yon = 1; } ust = u; alt = a; o.push({value: yon === 1 ? a : u, color: yon === 1 ? "#26a69a" : "#ef5350"}); } return o; }
+function ortaNokta(n, i) { if (i < n - 1) return null; let h = -Infinity, l = Infinity; for (let j = i - n + 1; j <= i; j++) { h = Math.max(h, bars[j].high); l = Math.min(l, bars[j].low); } return (h + l) / 2; }
+let pivotCizgiler = [], pivotGun = {};
+async function pivotGetir() {
+  const key = sembol;
+  if (pivotGun[key] && Date.now() - pivotGun[key].zaman < 600000) return pivotGun[key].d;
+  try { const d = await (await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${sembol}USDT&interval=1d&limit=2`)).json(); pivotGun[key] = {zaman: Date.now(), d: {h: +d[0][2], l: +d[0][3], c: +d[0][4]}}; return pivotGun[key].d; } catch (e) { return null; }
+}
+async function pivotCiz() {
+  pivotCizgiler.forEach(p => mum.removePriceLine(p)); pivotCizgiler = [];
+  if (!aktif.pivot) return;
+  const s = sembol, d = await pivotGetir();
+  if (!d || s !== sembol || !aktif.pivot) return;
+  pivotCizgiler.forEach(p => mum.removePriceLine(p)); pivotCizgiler = [];
+  const P = (d.h + d.l + d.c) / 3, sv = {P, R1: 2 * P - d.l, S1: 2 * P - d.h, R2: P + (d.h - d.l), S2: P - (d.h - d.l)};
+  for (const [ad, p] of Object.entries(sv)) pivotCizgiler.push(mum.createPriceLine({price: p, color: ad === "P" ? "#ff9800" : ad[0] === "R" ? "#ef9a9a" : "#80cbc4", lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted, title: ad}));
+}
+function altDuzen() {
+  const ak = ALTLAR.filter(k => aktif[k]), N = ak.length, H = 0.17;
+  mum.priceScale().applyOptions({scaleMargins: {top: 0.08, bottom: 0.1 + N * H}});
+  if (hacim) chart.priceScale("hacim").applyOptions({scaleMargins: {top: 1 - N * H - 0.12, bottom: N * H}});
+  ak.forEach((k, i) => { const ust = 1 - (N - i) * H + 0.02, alt = (N - i - 1) * H; try { chart.priceScale(k).applyOptions({scaleMargins: {top: ust, bottom: alt}}); } catch (e) {} });
+  return ak;
+}
+function altSeri(k, ad, tip, ops) {
+  const key = k + "_" + ad;
+  if (!cizgiSeri[key]) {
+    const o = Object.assign({priceScaleId: k, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false}, ops);
+    cizgiSeri[key] = tip === "h" ? chart.addHistogramSeries(o) : chart.addLineSeries(o);
+    if (o.seviyeler) o.seviyeler.forEach(p => cizgiSeri[key].createPriceLine({price: p, color: "#434651", lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: false}));
+  }
+  return cizgiSeri[key];
+}
+function altSil(k) { Object.keys(cizgiSeri).filter(x => x.startsWith(k + "_")).forEach(seriSil); }
+const sabit = (a, b) => ({autoscaleInfoProvider: () => ({priceRange: {minValue: a, maxValue: b}})});
+let altDeger = {};
+
+let sonGuncelleme = 0;
+function gostergeGuncelle(zorla) {
+  const simdi = Date.now();
+  if (!zorla && simdi - sonGuncelleme < 1000) return;
+  sonGuncelleme = simdi;
+  const c = bars.map(b => b.close);
+  [["sma50", 50, "#26c6da"], ["sma200", 200, "#ec407a"]].forEach(([k, n, r]) => aktif[k] ? seriAl(k, r, 1.5).setData(satirlaYap(sma(c, n))) : seriSil(k));
+  if (aktif.st) seriAl("st", "#26a69a", 2).setData(supertrend().map((v, i) => v == null ? {time: bars[i].time} : {time: bars[i].time, value: v.value, color: v.color}));
+  else seriSil("st");
+  if (aktif.ichi) {
+    const tk = bars.map((_, i) => ortaNokta(9, i)), kj = bars.map((_, i) => ortaNokta(26, i)), sb = bars.map((_, i) => ortaNokta(52, i));
+    const sa = tk.map((t, i) => t == null || kj[i] == null ? null : (t + kj[i]) / 2);
+    const kay = v => bars.map((_, i) => i >= 26 ? v[i - 26] : null);
+    seriAl("ichiT", "#2962ff").setData(satirlaYap(tk)); seriAl("ichiK", "#b71c1c").setData(satirlaYap(kj));
+    seriAl("ichiA", "rgba(76,175,80,.8)").setData(satirlaYap(kay(sa))); seriAl("ichiB", "rgba(255,82,82,.8)").setData(satirlaYap(kay(sb)));
+  } else ["ichiT", "ichiK", "ichiA", "ichiB"].forEach(seriSil);
+  altDeger = {};
+  if (aktif.rsi) { const r = rsiHesap(c); altSeri("rsi", "r", "l", Object.assign({color: "#7e57c2", lineWidth: 1.5, seviyeler: [70, 30]}, sabit(0, 100))).setData(satirlaYap(r)); altDeger.rsi = r[r.length - 1]; } else altSil("rsi");
+  if (aktif.macd) {
+    const e12 = emaN(c, 12), e26 = emaN(c, 26), m = e12.map((x, i) => x == null || e26[i] == null ? null : x - e26[i]), s = emaN(m, 9);
+    altSeri("macd", "h", "h", {}).setData(m.map((x, i) => x == null || s[i] == null ? {time: bars[i].time} : {time: bars[i].time, value: x - s[i], color: x - s[i] >= 0 ? "rgba(38,166,154,.6)" : "rgba(239,83,80,.6)"}));
+    altSeri("macd", "m", "l", {color: "#2962ff", lineWidth: 1.5}).setData(satirlaYap(m));
+    altSeri("macd", "s", "l", {color: "#ff9800", lineWidth: 1.5}).setData(satirlaYap(s));
+    altDeger.macd = m[m.length - 1];
+  } else altSil("macd");
+  if (aktif.stoch) { const [k, d] = stochRsi(c); altSeri("stoch", "k", "l", Object.assign({color: "#2962ff", lineWidth: 1.5, seviyeler: [80, 20]}, sabit(0, 100))).setData(satirlaYap(k)); altSeri("stoch", "d", "l", Object.assign({color: "#ff9800", lineWidth: 1.5}, sabit(0, 100))).setData(satirlaYap(d)); altDeger.stoch = k[k.length - 1]; } else altSil("stoch");
+  if (aktif.atr) { const a = rma(trHesap(), 14); altSeri("atr", "a", "l", {color: "#ef5350", lineWidth: 1.5}).setData(satirlaYap(a)); altDeger.atr = a[a.length - 1]; } else altSil("atr");
+  altDuzen();
+  likListe = aktif.lik ? likBul() : [];
+  tulListe = aktif.tul ? tulBul() : [];
+  hpAnahtar = "";
+  [["ema20", 20, "#f7c948"], ["ema50", 50, "#42a5f5"], ["ema200", 200, "#ab47bc"]].forEach(([k, n, r]) => aktif[k] ? seriAl(k, r, 1.5).setData(satirlaYap(ema(c, n))) : seriSil(k));
+  if (aktif.bb) { const [u, o, a] = bolli(c, 20, 2); seriAl("bbu", "#2962ff").setData(satirlaYap(u)); seriAl("bbo", "#ff9800").setData(satirlaYap(o)); seriAl("bba", "#2962ff").setData(satirlaYap(a)); }
+  else ["bbu", "bbo", "bba"].forEach(seriSil);
+  aktif.vwap ? seriAl("vwap", "#e040fb", 1.5).setData(satirlaYap(vwap())) : seriSil("vwap");
+}
+
+// ---------------- Time to Go ----------------
+const gecerliIslemler = () => ISLEMLER.filter(i => new Date(i.bitis).getTime() > Date.now());
+function ttgKart() {
+  const el = $("#ttgKart");
+  if (!aktif.ttg) { el.hidden = true; akisKur(); return; }
+  el.hidden = false;
+  const g = gecerliIslemler().filter(i => i.coin === sembol);
+  if (!g.length) { el.hidden = true; akisKur(); return; }
+  let h = '<div class="kb">TIME TO GO</div>';
+  for (const i of g) {
+    const s = i.yon === "SHORT";
+    h += `<div class="islem ${s ? "s" : "l"}" data-coin="${esc(i.coin)}" title="${esc(i.not || "")}"><div class="serit"></div>
+      <div class="ust"><b>${esc(i.coin)}USDT</b><span class="yon">${esc(i.yon)}</span></div>
+      <div class="sat"><span>Giriş</span><span>${f(i.alt)} - ${f(i.ust)}</span></div>
+      <div class="sat"><span>Stop</span><span class="st">${f(i.stop)}</span></div>
+      <div class="sat"><span>Hedef</span><span class="hd">${f(i.hedef)}</span></div>
+      <div class="not">${esc(i.not || "")}</div>
+      ${i.coin !== sembol ? '<div class="git">Grafiği açmak için tıkla</div>' : ""}</div>`;
+  }
+  h += '<div class="uyari">Yatırım tavsiyesi değildir.</div>';
+  el.innerHTML = h;
+  el.querySelectorAll(".islem").forEach(x => x.onclick = () => sembolSec(x.dataset.coin));
+  el.querySelector(".kb").onclick = () => el.classList.toggle("kucuk");
+  akisKur();
+}
+// ---- Canli akis (14.11): yalniz Time to Go islemi olan coinde, Binance anlik alim/satimlari isik hiziyla akar ----
+let akisWs = null, akisSem = null, akisTampon = [], akisOrt = 0;
+function akisKur() {
+  const ac = aktif.ttg && gecerliIslemler().some(i => i.coin === sembol);
+  $("#akis").hidden = !ac;
+  if (!ac) { if (akisWs) { akisWs.onclose = null; akisWs.close(); akisWs = null; akisSem = null; } return; }
+  if (akisWs && akisSem === sembol) return;
+  if (akisWs) { akisWs.onclose = null; akisWs.close(); }
+  akisSem = sembol; akisTampon = []; akisOrt = 0; $("#akisSat").innerHTML = "";
+  akisWs = new WebSocket(`wss://fstream.binance.com/market/ws/${sembol.toLowerCase()}usdt@aggTrade`);
+  akisWs.onmessage = e => { const t = JSON.parse(e.data); akisTampon.push({p: +t.p, n: +t.p * +t.q, sat: t.m}); };
+  akisWs.onclose = () => { akisWs = null; setTimeout(akisKur, 3000); };
+}
+const kisa = n => n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : n.toFixed(0);
+setInterval(() => {
+  if (!akisTampon.length || $("#akis").hidden) { akisTampon = []; return; }
+  const el = $("#akisSat"), yeni = akisTampon.splice(0).slice(-12);
+  let h = "";
+  for (const t of yeni.reverse()) {
+    akisOrt = akisOrt ? akisOrt * 0.97 + t.n * 0.03 : t.n;
+    h += `<div class="${t.sat ? "sa" : "al"}${t.n > akisOrt * 4 && t.n > 5000 ? " buyuk" : ""}"><span>${f(t.p, ondalik)}</span><span>${t.sat ? "▼" : "▲"} ${kisa(t.n)}</span></div>`;
+  }
+  el.insertAdjacentHTML("afterbegin", h);
+  while (el.children.length > 40) el.lastChild.remove();
+}, 120);
+function ttgGrafik() {
+  ttgCizgiler.forEach(p => mum.removePriceLine(p)); ttgCizgiler = [];
+  if (!aktif.ttg) return;
+  for (const i of gecerliIslemler().filter(i => i.coin === sembol)) {
+    const L = LightweightCharts.LineStyle;
+    ttgCizgiler.push(mum.createPriceLine({price: i.stop, color: "#ef5350", lineWidth: 1, lineStyle: L.Dashed, title: "Stop"}));
+    ttgCizgiler.push(mum.createPriceLine({price: (i.alt + i.ust) / 2, color: i.yon === "SHORT" ? "#ff2bd6" : "#39ff88", lineWidth: 1, lineStyle: L.SparseDotted, title: "Giriş", axisLabelVisible: true}));
+    ttgCizgiler.push(mum.createPriceLine({price: i.hedef, color: "#26a69a", lineWidth: 1, lineStyle: L.Dashed, title: "Hedef"}));
+  }
+}
+setInterval(() => { const n = document.getElementById("nokta"); if (n) n.textContent = [".", "..", "...", ""][Math.floor(Date.now() / 1000) % 4]; }, 1000);
+setInterval(() => { ttgKart(); ttgGrafik(); }, 60000);
+
+// ---------------- lejant ----------------
+let imlecBar = null;
+chart.subscribeCrosshairMove(p => { imlecBar = p && p.time ? bars.find(b => b.time === p.time) || null : null; lejant(); });
+function lejant() {
+  const b = imlecBar || bars[bars.length - 1];
+  if (!b) return;
+  const r = b.close >= b.open ? "art" : "eks";
+  const deg = (b.close - b.open) / b.open * 100;
+  const gl = GOSTERGELER.filter(g => aktif[g.k]).map(g => g.ad).join(" · ");
+  $("#lejant").innerHTML = `<span class="baslik">${esc(sembol)}USDT.P · ${aralik.ad} · Binance</span><span class="ohlc">
+    <span class="d">A <span class="${r}">${f(b.open, ondalik)}</span></span><span class="d">Y <span class="${r}">${f(b.high, ondalik)}</span></span>
+    <span class="d">D <span class="${r}">${f(b.low, ondalik)}</span></span><span class="d">K <span class="${r}">${f(b.close, ondalik)}</span></span>
+    <span class="${r}">${deg >= 0 ? "+" : ""}${deg.toFixed(2)}%</span></span><div class="gl">${esc(gl)}</div>`;
+}
+
+// ---------------- cizim araclari ----------------
+const svg = $("#cizim");
+function X(t) { if (!bars.length) return null; return chart.timeScale().logicalToCoordinate((t - bars[0].time) / aralik.sn); }
+function Y(p) { return mum.priceToCoordinate(p); }
+function nokta(e) {
+  const r = svg.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  const l = chart.timeScale().coordinateToLogical(x);
+  return {t: bars[0].time + Math.round(l) * aralik.sn, p: mum.coordinateToPrice(y)};
+}
+const metin = (x, y, s, renk, hiza = "middle", arka) => (arka ? `<rect x="${hiza === "middle" ? x - s.length * 3.4 - 5 : x - 3}" y="${y - 12}" width="${s.length * 6.8 + 10}" height="17" rx="3" fill="${arka}"/>` : "") + `<text x="${x}" y="${y}" fill="${renk}" font-size="12" text-anchor="${hiza}">${esc(s)}</text>`;
+function sekil(d, W) {
+  const a = d.a, b = d.b || d.a;
+  const xa = X(a.t), ya = Y(a.p), xb = X(b.t), yb = Y(b.p);
+  if (xa == null || ya == null) return "";
+  switch (d.tip) {
+    case "yatay": return `<line x1="0" x2="${W}" y1="${ya}" y2="${ya}" stroke="#2962ff" stroke-width="1.5"/>` + metin(W - 4, ya - 4, f(a.p, ondalik), "#8ab4ff", "end");
+    case "isin": return `<line x1="${xa}" x2="${W}" y1="${ya}" y2="${ya}" stroke="#2962ff" stroke-width="1.5"/><circle cx="${xa}" cy="${ya}" r="3" fill="#2962ff"/>` + metin(W - 4, ya - 4, f(a.p, ondalik), "#8ab4ff", "end");
+    case "trend": if (xb == null || yb == null) return ""; return `<line x1="${xa}" y1="${ya}" x2="${xb}" y2="${yb}" stroke="#2962ff" stroke-width="1.5"/><circle cx="${xa}" cy="${ya}" r="3" fill="#2962ff"/><circle cx="${xb}" cy="${yb}" r="3" fill="#2962ff"/>`;
+    case "kutu": if (xb == null || yb == null) return ""; return `<rect x="${Math.min(xa, xb)}" y="${Math.min(ya, yb)}" width="${Math.abs(xb - xa)}" height="${Math.abs(yb - ya)}" fill="rgba(41,98,255,.15)" stroke="#2962ff"/>`;
+    case "fib": {
+      if (xb == null || yb == null) return "";
+      const sev = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1], renk = ["#787b86", "#f23645", "#ff9800", "#4caf50", "#089981", "#00bcd4", "#787b86"];
+      const x1 = Math.min(xa, xb), x2 = Math.max(xa, xb) + 60;
+      return sev.map((s, i) => { const p = b.p + (a.p - b.p) * s, y = Y(p); return y == null ? "" : `<line x1="${x1}" x2="${x2}" y1="${y}" y2="${y}" stroke="${renk[i]}"/>` + metin(x1 + 2, y - 3, `${s} (${f(p, ondalik)})`, renk[i], "start"); }).join("") + `<line x1="${xa}" y1="${ya}" x2="${xb}" y2="${yb}" stroke="#787b86" stroke-dasharray="4 4"/>`;
+    }
+    case "long": case "short": {
+      const uzun = d.tip === "long", g = a.p;
+      const risk = Math.abs(a.p - b.p) || g * 0.005;
+      const stop = uzun ? g - risk : g + risk, hedef = uzun ? g + 2 * risk : g - 2 * risk;
+      const x1 = xa, x2 = (xb != null && xb > xa + 20) ? xb : xa + 140;
+      const yS = Y(stop), yH = Y(hedef);
+      if (yS == null || yH == null) return "";
+      const yuz = p => Math.abs(p - g) / g * 100;
+      const w = x2 - x1, xm = x1 + w / 2;
+      return `<rect x="${x1}" y="${Math.min(ya, yH)}" width="${w}" height="${Math.abs(yH - ya)}" fill="rgba(38,166,154,.22)"/>
+        <rect x="${x1}" y="${Math.min(ya, yS)}" width="${w}" height="${Math.abs(yS - ya)}" fill="rgba(239,83,80,.22)"/>
+        <line x1="${x1}" x2="${x2}" y1="${ya}" y2="${ya}" stroke="#b2b5be"/>` +
+        metin(xm, yH + (uzun ? -6 : 16), `Hedef: ${f(hedef, ondalik)} (${yuz(hedef).toFixed(2)}%)`, "#fff", "middle", "#089981") +
+        metin(xm, yS + (uzun ? 16 : -6), `Stop: ${f(stop, ondalik)} (${yuz(stop).toFixed(2)}%)`, "#fff", "middle", "#f23645") +
+        metin(xm, ya + (uzun ? 15 : -6), `${uzun ? "Long" : "Short"} · Giriş ${f(g, ondalik)} · R/R 2,00`, "#d1d4dc", "middle", "rgba(30,34,45,.9)");
+    }
+  }
+  return "";
+}
+function ttgKutu(W) {
+  // 14.11: giris = NEON cizgi. Short: neon pembe, isik yukaridan iner. Long: neon yesil, isik asagidan cikar.
+  if (!aktif.ttg || !bars.length) return "";
+  let s = "";
+  for (const i of gecerliIslemler().filter(i => i.coin === sembol)) {
+    const g = (i.alt + i.ust) / 2, y = Y(g);
+    if (y == null) continue;
+    const sh = i.yon === "SHORT", renk = sh ? "#ff2bd6" : "#39ff88", x1 = Math.max(0, X(bars[Math.max(0, bars.length - 30)].time) ?? 0);
+    const id = "neon" + (sh ? "S" : "L"), yuk = 46, y0 = sh ? y - yuk : y;
+    s += `<defs><filter id="${id}f" x="-5%" y="-300%" width="110%" height="700%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <linearGradient id="${id}g" x1="0" y1="${sh ? 1 : 0}" x2="0" y2="${sh ? 0 : 1}"><stop offset="0" stop-color="${renk}" stop-opacity=".38"/><stop offset="1" stop-color="${renk}" stop-opacity="0"/></linearGradient></defs>` +
+      `<rect x="${x1}" y="${y0}" width="${W - x1}" height="${yuk}" fill="url(#${id}g)"><animate attributeName="opacity" values="1;.55;1" dur="2s" repeatCount="indefinite"/></rect>` +
+      `<line x1="${x1}" x2="${W}" y1="${y}" y2="${y}" stroke="${renk}" stroke-width="2" filter="url(#${id}f)"/>` +
+      metin(x1 + 4, sh ? y + 18 : y - 8, `TIME TO GO · ${sh ? "SHORT" : "LONG"}  ${f(i.alt)} – ${f(i.ust)}`, "#fff", "start", sh ? "rgba(255,43,214,.85)" : "rgba(30,170,90,.9)");
+  }
+  return s;
+}
+let tulListe = [];
+// ---- Trend tulu (14.11): ATR bandli trend izi, yumusatilmis. Dususte egri fiyatin ustunde (pembe), yukseliste altinda (yesil);
+// egriyle fiyat arasi tul gibi solan renkle dolar.
+function tulBul() {
+  const n = bars.length; if (n < 40) return [];
+  const atr = rma(trHesap(), 14), orta = emaN(bars.map(b => (b.high + b.low) / 2), 10), out = [];
+  let yon = 1, iz = null;
+  for (let i = 0; i < n; i++) {
+    if (atr[i] == null || orta[i] == null) { out.push(null); continue; }
+    const c = bars[i].close, ust = orta[i] + 1.8 * atr[i], alt = orta[i] - 1.8 * atr[i];
+    if (iz === null) iz = alt;
+    if (yon === 1) { iz = Math.max(iz, alt); if (c < iz) { yon = -1; iz = ust; } }
+    else { iz = Math.min(iz, ust); if (c > iz) { yon = 1; iz = alt; } }
+    out.push({v: iz, yon});
+  }
+  const yum = emaN(out.map(o => o && o.v), 6);
+  return out.map((o, i) => o && yum[i] != null ? {v: yum[i], yon: o.yon} : null);
+}
+let likListe = [], hpVeri = null, hpAnahtar = "";
+// ---- Hacim profili (14.11): yuklu mumlarin hacmi fiyat kutularina dagitilir; yukselen mum = alim, dusen = satim. POC + %70 deger alani.
+function hpBul() {
+  // TradingView SVP gibi: her gun (UTC 00:00 = 03:00 TR) ayri profil, o gunun basinda cizilir. 4s ve ustu: gorunen aralik tek profil.
+  const vr = chart.timeScale().getVisibleLogicalRange();
+  const a0 = Math.max(0, Math.floor(vr ? vr.from : 0)), z0 = Math.min(bars.length - 1, Math.ceil(vr ? vr.to : bars.length - 1));
+  if (aralik.sn >= 14400) { const h = hpHesap(bars.slice(a0, z0 + 1)); return h ? [{...h, i0: null}] : []; }
+  const gun = t => Math.floor((t - TZ) / 86400), out = [];
+  let i = a0; while (i > 0 && gun(bars[i - 1].time) === gun(bars[a0].time)) i--;
+  while (i <= z0) {
+    let j = i; while (j + 1 < bars.length && gun(bars[j + 1].time) === gun(bars[i].time)) j++;
+    const h = hpHesap(bars.slice(i, j + 1));
+    if (h) out.push({...h, i0: i, i1: j, son: j === bars.length - 1});
+    i = j + 1;
+  }
+  return out;
+}
+function hpHesap(bars) {
+  if (bars.length < 4) return null;
+  const B = 40, lo = Math.min(...bars.map(b => b.low)), hi = Math.max(...bars.map(b => b.high)), st = (hi - lo) / B || 1;
+  const al = new Array(B).fill(0), sat = new Array(B).fill(0);
+  for (const b of bars) {
+    const a = Math.min(B - 1, Math.floor((b.low - lo) / st)), z = Math.min(B - 1, Math.floor((b.high - lo) / st)), pay = b.v / (z - a + 1);
+    for (let j = a; j <= z; j++) (b.close >= b.open ? al : sat)[j] += pay;
+  }
+  const top = al.map((x, j) => x + sat[j]), poc = top.indexOf(Math.max(...top)), tum = top.reduce((x, y) => x + y, 0);
+  let L = poc, H = poc, t = top[poc];
+  while (t < tum * 0.7 && (L > 0 || H < B - 1)) { if ((L > 0 ? top[L - 1] : -1) >= (H < B - 1 ? top[H + 1] : -1)) t += top[--L]; else t += top[++H]; }
+  return {lo, st, al, sat, top, poc, L, H, mx: top[poc]};
+}
+// ---- Likidasyon seviyeleri (Time to Go, 14.11): yuksek hacimli mumlarda acilan kaldiracli pozisyonlarin
+// tahmini patlama fiyatlari. Fiyat seviyeye degince likidite alinmis sayilir ve silinir. Yakin seviyeler birlesir.
+function likBul() {
+  const n = bars.length; if (n < 30) return [];
+  const vs = sma(bars.map(b => b.v), 20), KAL = [[10, 1], [25, 0.9], [50, 0.75], [100, 0.6]];
+  let ac = [], biten = [];
+  for (let i = 20; i < n; i++) {
+    const b = bars[i];
+    ac = ac.filter(l => { const dg = l.ust ? b.high >= l.p : b.low <= l.p; if (dg) { l.j = i; biten.push(l); } return !dg; });
+    if (i === n - 1 || !vs[i - 1] || b.v < vs[i - 1] * 1.6) continue;
+    const g = (b.high + b.low + b.close) / 3, k = b.v / vs[i - 1];
+    for (const [x, w] of KAL) { ac.push({i, p: g * (1 + 1 / x), ust: true, w: k * w, x}); ac.push({i, p: g * (1 - 1 / x), ust: false, w: k * w, x}); }
+  }
+  const son = bars[n - 1].close;
+  const ust = ac.filter(l => l.ust).sort((a, b) => a.p - b.p).slice(0, 14);
+  const alt = ac.filter(l => !l.ust).sort((a, b) => b.p - a.p).slice(0, 14);
+  const eski = biten.filter(l => l.j > n - 200).sort((a, b) => b.w - a.w).slice(0, 16);
+  const hep = ust.concat(alt, eski), mx = Math.max(1, ...hep.map(l => l.w));
+  return hep.map(l => ({...l, o: 0.3 + 0.7 * Math.min(1, l.w / mx)}));
+}
+function sistemCiz(W, H) {
+  let s = "";
+  const xi = i => chart.timeScale().logicalToCoordinate(i);
+  if (tulListe.length) {
+    let parca = [], yon = 0;
+    const bit = () => {
+      if (parca.length > 1) {
+        const r = yon === 1 ? "38,198,140" : "236,64,122", gid = "tg" + s.length;
+        const ust = parca.map(p => `${p.x},${p.y}`).join(" "), fiy = parca.slice().reverse().map(p => `${p.x},${p.yc}`).join(" ");
+        s += `<defs><linearGradient id="${gid}" x1="0" y1="${yon === 1 ? 1 : 0}" x2="0" y2="${yon === 1 ? 0 : 1}"><stop offset="0" stop-color="rgba(${r},.32)"/><stop offset="1" stop-color="rgba(${r},0)"/></linearGradient></defs>` +
+          `<polygon points="${ust} ${fiy}" fill="url(#${gid})"/><polyline points="${ust}" fill="none" stroke="rgba(${r},.95)" stroke-width="1.6"/>`;
+      }
+      parca = [];
+    };
+    tulListe.forEach((t, i) => {
+      if (!t) return;
+      const x = xi(i), y = Y(t.v), yc = Y(bars[i].close);
+      if (x == null || y == null || yc == null || x < -50 || x > W + 50) { bit(); return; }
+      if (t.yon !== yon) { bit(); yon = t.yon; }
+      parca.push({x: x.toFixed(1), y: y.toFixed(1), yc: yc.toFixed(1)});
+    });
+    bit();
+  }
+  if (aktif.hp && bars.length) {
+    const vr = chart.timeScale().getVisibleLogicalRange(), k = vr ? `${Math.floor(vr.from)}|${Math.ceil(vr.to)}|${bars.length}|${bars[bars.length - 1].v}` : "";
+    if (k !== hpAnahtar) { hpAnahtar = k; hpVeri = hpBul(); }
+  } else hpVeri = null;
+  for (const h of (hpVeri || [])) {
+    const gunMum = 86400 / aralik.sn;
+    const x0 = h.i0 == null ? 0 : xi(h.i0), xs = h.i0 == null ? W : (h.son ? W : xi(h.i1 + 1));
+    if (x0 == null || xs == null) continue;
+    const gen = h.i0 == null ? W * 0.22 : Math.max(0, (xi(h.i0 + gunMum) ?? W) - x0) * 0.7;
+    h.top.forEach((v, j) => {
+      const y1 = Y(h.lo + (j + 1) * h.st), y2 = Y(h.lo + j * h.st);
+      if (y1 == null || y2 == null || !v) return;
+      const yy = Math.min(y1, y2), hh = Math.max(1, Math.abs(y2 - y1) - 1), w1 = gen * h.al[j] / h.mx, w2 = gen * h.sat[j] / h.mx, va = j >= h.L && j <= h.H;
+      s += `<rect x="${x0}" y="${yy}" width="${w1}" height="${hh}" fill="rgba(38,198,218,${va ? .62 : .32})"/><rect x="${x0 + w1}" y="${yy}" width="${w2}" height="${hh}" fill="rgba(236,64,122,${va ? .62 : .32})"/>`;
+    });
+    const pp = h.lo + (h.poc + 0.5) * h.st, yp = Y(pp);
+    if (yp != null) s += `<line x1="${x0}" x2="${xs}" y1="${yp}" y2="${yp}" stroke="rgba(255,255,255,.85)" stroke-width="1.5"/>` + metin(x0 + 4, yp - 3, `POC ${f(pp, ondalik)}`, "rgba(255,255,255,.9)", "start");
+  }
+  for (const l of likListe) {
+    const x1 = xi(l.i), y = Y(l.p);
+    if (x1 == null || y == null) continue;
+    const x2 = l.j != null ? xi(l.j) : W, r = l.ust ? (l.x >= 50 ? "91,156,246" : "38,198,218") : (l.x >= 50 ? "171,71,188" : "236,64,122");
+    const op = l.j != null ? 0.35 : 0.85, rr = 3.5 + 5 * l.o;
+    s += `<line x1="${x1}" x2="${x2}" y1="${y}" y2="${y}" stroke="rgba(${r},${op})" stroke-width="${l.j != null ? 1 : 1.5}"/>` +
+      `<circle cx="${x1}" cy="${y}" r="${(rr * 1.8).toFixed(1)}" fill="rgba(${r},${(0.18 + 0.2 * l.o).toFixed(2)})"/><circle cx="${x1}" cy="${y}" r="${rr.toFixed(1)}" fill="rgba(${r},${(op * 0.9).toFixed(2)})"/>` +
+      (l.j != null ? `<circle cx="${x2}" cy="${y}" r="2.5" fill="rgba(${r},.7)"/>` : "");
+  }
+
+  // alt bolum basliklari ve ayraclari
+  const ak = ALTLAR.filter(k => aktif[k]), N = ak.length, Hh = 0.17;
+  ak.forEach((k, i) => {
+    const y = H * (1 - (N - i) * Hh);
+    const v = altDeger[k];
+    s += `<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="#2a2e39"/>` + metin(8, y + 14, ALT_AD[k] + (v != null ? "  " + v.toFixed(k === "atr" || k === "macd" ? ondalik : 2) : ""), "#b2b5be", "start");
+  });
+  return s;
+}
+let sonSvg = "";
+function cizDongu() {
+  const ts = chart.timeScale(), W = ts.width(), H = grafikEl.clientHeight - ts.height();
+  if (svg.getAttribute("width") != W || svg.getAttribute("height") != H) { svg.setAttribute("width", W); svg.setAttribute("height", H); svg.style.width = W + "px"; svg.style.height = H + "px"; }
+  let s = sistemCiz(W, H) + ttgKutu(W);
+  for (const d of (cizimler[sembol] || [])) s += sekil(d, W);
+  if (taslak) s += sekil(taslak, W);
+  if (s !== sonSvg) { svg.innerHTML = s; sonSvg = s; }
+  requestAnimationFrame(cizDongu);
+}
+requestAnimationFrame(cizDongu);
+
+function aracSec(k) {
+  if (k === "geri") { (cizimler[sembol] || []).pop(); kayitYaz("ttg_cizim", cizimler); return; }
+  if (k === "sil") { if ((cizimler[sembol] || []).length && confirm(sembol + " grafiğindeki tüm çizimler silinsin mi?")) { cizimler[sembol] = []; kayitYaz("ttg_cizim", cizimler); } return; }
+  arac = k; taslak = null;
+  svg.classList.toggle("aktif", k !== "imlec");
+  document.querySelectorAll(".arac").forEach(b => b.classList.toggle("secili", b.dataset.k === k));
+}
+function cizimEkle(d) { (cizimler[sembol] = cizimler[sembol] || []).push(d); kayitYaz("ttg_cizim", cizimler); taslak = null; aracSec("imlec"); }
+svg.addEventListener("click", e => {
+  if (arac === "imlec" || !bars.length) return;
+  const n = nokta(e);
+  if (n.p == null) return;
+  if (arac === "yatay" || arac === "isin") return cizimEkle({tip: arac, a: n});
+  if (!taslak) taslak = {tip: arac, a: n, b: n};
+  else cizimEkle({tip: arac, a: taslak.a, b: n});
+});
+svg.addEventListener("mousemove", e => { if (taslak) { const n = nokta(e); if (n.p != null) taslak.b = n; } });
+svg.addEventListener("wheel", e => { e.preventDefault(); }, {passive: false});
+document.addEventListener("keydown", e => { if (e.key === "Escape") { aracSec("imlec"); modalKapat(); } });
+
+// ---------------- izleme listesi ----------------
+function listeKur() {
+  const yonu = c => { const i = gecerliIslemler().find(i => i.coin === c); return i ? (i.yon === "SHORT" ? " ttgS" : " ttgL") : ""; };
+  const g = gecerliIslemler(); $("#listeAc").className = "ub" + (g.length ? (g.every(i => i.yon === "SHORT") ? " ttgS" : " ttgL") : "");
+  $("#satirlar").innerHTML = COINLER.map(c => `<div class="satir${c === sembol ? " secili" : ""}${yonu(c)}" data-c="${c}"><span><b>${c}</b>${gecerliIslemler().some(i => i.coin === c) ? '<span class="ttg" title="Time to Go işlemi var"></span>' : ""}</span><span class="son">-</span><span class="deg">-</span></div>`).join("");
+  document.querySelectorAll(".satir").forEach(r => r.onclick = () => { sembolSec(r.dataset.c); $("#liste").classList.remove("acik"); });
+  for (const c in fiyatlar) satirYaz(c);
+}
+function satirYaz(c) {
+  const r = document.querySelector(`.satir[data-c="${c}"]`), x = fiyatlar[c];
+  if (!r || !x) return;
+  r.querySelector(".son").textContent = f(x.son);
+  const d = r.querySelector(".deg");
+  d.textContent = (x.deg >= 0 ? "+" : "") + x.deg.toFixed(2) + "%";
+  d.className = "deg " + (x.deg >= 0 ? "art" : "eks");
+}
+async function fiyatBaslat() {
+  try {
+    const d = await (await fetch("https://fapi.binance.com/fapi/v1/ticker/24hr")).json();
+    for (const t of d) { const c = t.symbol.replace(/USDT$/, ""); if (COINLER.includes(c) && t.symbol.endsWith("USDT")) { fiyatlar[c] = {son: +t.lastPrice, deg: +t.priceChangePercent}; satirYaz(c); } }
+  } catch (e) {}
+  const w = new WebSocket("wss://fstream.binance.com/market/ws/!miniTicker@arr");
+  w.onmessage = e => { for (const t of JSON.parse(e.data)) { if (!t.s.endsWith("USDT")) continue; const c = t.s.slice(0, -4); if (!COINLER.includes(c)) continue; fiyatlar[c] = {son: +t.c, deg: (+t.c - +t.o) / +t.o * 100}; satirYaz(c); } };
+  w.onclose = () => setTimeout(fiyatBaslat, 5000);
+}
+
+// ---------------- ust bar, modal ----------------
+function sembolSec(c) {
+  if (!COINLER.includes(c)) return;
+  sembol = c; kayitYaz("ttg_sembol", c); taslak = null;
+  $("#sembolAd").textContent = c + "USDT.P";
+  document.querySelectorAll(".satir").forEach(r => r.classList.toggle("secili", r.dataset.c === c));
+  ttgKart(); yukle();
+}
+function araliklarKur() {
+  $("#araliklar").innerHTML = ARALIK.map(a => `<button class="ub${a === aralik ? " secili" : ""}" data-a="${a.ad}">${a.ad}</button>`).join("");
+  document.querySelectorAll("#araliklar .ub").forEach(b => b.onclick = () => { aralik = ARALIK.find(a => a.ad === b.dataset.a); kayitYaz("ttg_aralik", aralik.ad); araliklarKur(); yukle(); });
+}
+function araclarKur() {
+  $("#araclar").innerHTML = ARACLAR.map(a => a.ayrac ? '<span class="arac-ayrac"></span>' : `<button class="arac${a.k === arac ? " secili" : ""}" data-k="${a.k}" title="${a.ad}"><svg viewBox="0 0 24 24">${a.svg}</svg></button>`).join("");
+  document.querySelectorAll(".arac").forEach(b => b.onclick = () => aracSec(b.dataset.k));
+}
+function gostergeListeKur() {
+  const q = $("#ara").value.trim().toLocaleLowerCase("tr");
+  let h = "", grup = "";
+  for (const g of GOSTERGELER.filter(g => !q || g.ad.toLocaleLowerCase("tr").includes(q))) {
+    if (g.grup !== grup) { grup = g.grup; h += `<div class="gr">${grup}</div>`; }
+    h += `<div class="og" data-k="${g.k}"><span>${g.k === "ttg" ? "⭐ " : ""}${g.ad}<small>${g.ac}</small></span><span class="tik">${aktif[g.k] ? "✓" : ""}</span></div>`;
+  }
+  $("#gostergeListe").innerHTML = h || '<div class="gr">Sonuç yok</div>';
+  document.querySelectorAll(".og").forEach(o => o.onclick = () => {
+    aktif[o.dataset.k] = !aktif[o.dataset.k]; kayitYaz("ttg_gosterge", aktif);
+    gostergeleriKur(); ttgGrafik(); pivotCiz(); lejant(); gostergeListeKur();
+  });
+}
+function modalKapat() { $("#modal").hidden = true; }
+$("#gostergeBtn").onclick = () => { $("#modal").hidden = false; $("#ara").value = ""; gostergeListeKur(); $("#ara").focus(); };
+$("#modalKapat").onclick = modalKapat;
+$("#modal").onclick = e => { if (e.target.id === "modal") modalKapat(); };
+$("#ara").oninput = gostergeListeKur;
+$("#sembolAd").onclick = () => $("#liste").classList.toggle("acik");
+let sesIlk = true;
+$("#sesBtn").onclick = () => { if (sesIlk || !(actx && actx.state === "running")) { sesIlk = false; sesAcik = true; } else sesAcik = !sesAcik; sesHazirla(); setTimeout(() => { sesDugme(); if (sesAcik) bip(); }, 150); };
+$("#listeAc").onclick =() => $("#liste").classList.toggle("acik");
+setInterval(() => $("#saat").textContent = new Date().toLocaleTimeString("tr-TR", {timeZone: "Europe/Istanbul"}) + " (TR)", 1000);
+
+araliklarKur(); araclarKur(); listeKur(); fiyatBaslat();
+islemleriOku(); setInterval(islemleriOku, 30000); sesDugme();
+$("#sembolAd").textContent = sembol + "USDT.P";
+yukle();
+</script>
+</body>
+</html>
