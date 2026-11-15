@@ -1,23 +1,13 @@
 {
-  "guncelleme": "2026-11-15T00:50:59+03:00",
-  "islemler": [
+  "guncelleme": "2026-11-15T03:02:49+03:00",
+  "islemler": [],
+  "iptaller": [
     {
       "coin": "TIA",
       "yon": "SHORT",
-      "alt": 0.3382,
-      "ust": 0.3406,
-      "stop": 0.34204,
-      "hedef": 0.3271,
-      "bitis": "2026-11-16T00:00+03:00",
-      "not": "Bölgeye yavaş gelirse short. Yapı bozulursa işlem iptal edilir.",
-      "yayin": "2026-11-15T00:38:01+03:00",
-      "girildi": {
-        "zaman": "2026-11-15T00:50:59+03:00",
-        "fiyat": 0.3369
-      }
-    }
-  ],
-  "iptaller": [
+      "neden": "stop oldu",
+      "zaman": "2026-11-15T03:02:49+03:00"
+    },
     {
       "coin": "FIL",
       "yon": "SHORT",
@@ -71,12 +61,6 @@
       "yon": "SHORT",
       "neden": "girişe gelmeden hedefe gitti",
       "zaman": "2026-11-14T05:17:59+03:00"
-    },
-    {
-      "coin": "SOL",
-      "yon": "SHORT",
-      "neden": "girişe gelmeden hedefe gitti",
-      "zaman": "2026-11-14T04:47:14+03:00"
     }
   ]
 }
