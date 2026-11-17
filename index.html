@@ -34,6 +34,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .arac-ayrac{width:26px;height:1px;background:var(--cizgi);margin:4px 0}
 #grafikAlan{flex:1;position:relative;min-width:0}
 #grafik{position:absolute;inset:0}
+#sinyalOzet{position:absolute;left:10px;bottom:34px;z-index:4;background:rgba(10,12,18,.82);border:1px solid #2a2e39;border-radius:6px;padding:6px 10px;font-size:12px;color:#d1d4dc;pointer-events:none;line-height:1.5}
+#sinyalOzet b{color:#f7c948}#sinyalOzet .y{color:#26a69a}#sinyalOzet .k{color:#ef5350}
 #cizim{position:absolute;left:0;top:0;pointer-events:none;overflow:hidden;z-index:2}
 #cizim.aktif{pointer-events:auto;cursor:crosshair}
 #lejant{position:absolute;left:10px;top:8px;z-index:3;pointer-events:none;font-size:13px;white-space:nowrap}
@@ -162,6 +164,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <svg id="cizim"></svg>
       <div id="lejant"></div>
       <div id="durum"></div>
+      <div id="sinyalOzet" hidden></div>
       <div id="ttgKart" hidden></div>
       <div id="akis" hidden><div class="ab"><span class="nk"></span>CANLI AKIŞ</div><div id="denge"><div class="dy"><span id="dAl">ALIM 50%</span><span id="dSat">SATIM 50%</span></div><div class="dc"><div id="dBar"></div><div id="dIgne"></div></div><div id="dBaski">DENGE</div></div><div id="akisSat"></div></div>
       <div id="bildirim" hidden></div>
@@ -343,6 +346,7 @@ const ARALIK = [
   {ad:"4s",api:"4h",sn:14400},{ad:"1G",api:"1d",sn:86400}];
 const GOSTERGELER = [
   {k:"ttg", ad:"Time to Go", ac:"Aktif işlem: giriş bölgesi, stop ve hedef", grup:"Özel"},
+  {k:"sinyal", ad:"Time to Go Sinyal (1s)", ac:"1 saatlik grafikte sinyaller: giriş, stop, hedef ve sonuç", grup:"Özel"},
   {k:"hacim", ad:"Hacim", ac:"İşlem hacmi", grup:"Teknik"},
   {k:"ema20", ad:"EMA 20", ac:"Üstel hareketli ortalama (20)", grup:"Teknik"},
   {k:"ema50", ad:"EMA 50", ac:"Üstel hareketli ortalama (50)", grup:"Teknik"},
@@ -386,7 +390,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 let sembol = kayitOku("ttg_sembol", "BTC");
 if (!COINLER.includes(sembol)) sembol = "BTC";
 let aralik = ARALIK.find(a => a.ad === kayitOku("ttg_aralik", "15dk")) || ARALIK[5];
-let aktif = Object.assign({ttg:true, lik:true, hp:false, tul:false, hacim:true, ema20:false, ema50:false, ema200:false, bb:false, vwap:false}, kayitOku("ttg_gosterge", {}));
+let aktif = Object.assign({ttg:true, sinyal:true, lik:true, hp:false, tul:false, hacim:true, ema20:false, ema50:false, ema200:false, bb:false, vwap:false}, kayitOku("ttg_gosterge", {}));
 // 14.11 (grafik kalabalik) -> varsayilan yalniz likidasyon cizgileri; tul ve hacim profili bir kez kapatilir, isteyen acar
 try { if (!localStorage.getItem("ttg_sade1")) { aktif.hp = false; aktif.tul = false; localStorage.setItem("ttg_sade1", "1"); } } catch (e) {}
 let cizimler = kayitOku("ttg_cizim", {});
@@ -443,6 +447,7 @@ async function yukle() {
     const n = bars.length;
     chart.timeScale().setVisibleLogicalRange({from: n - 160, to: n + 12});
     ttgGrafik();
+    sinyalCiz();
     pivotCiz();
     lejant();
     $("#durum").textContent = "";
@@ -656,6 +661,47 @@ function ttgGrafik() {
     if (i.girildi) ttgCizgiler.push(mum.createPriceLine({price: i.girildi.fiyat, color: "#00e676", lineWidth: 2, lineStyle: L.Solid, title: "✅ Girildi", axisLabelVisible: true}));
   }
 }
+
+// ---- Time to Go Sinyal (1 saatlik): sinyaller sunucuda hesaplanir, burada yalniz sonuclar cizilir ----
+let sinyalVeri = null, sinyalSeriler = [], sinyalCizgiler = [];
+async function sinyalYukle() {
+  try { sinyalVeri = await (await fetch("sinyal.json?t=" + Date.now(), {cache: "no-store"})).json(); } catch (e) {}
+  sinyalCiz();
+}
+function sinyalCiz() {
+  sinyalSeriler.forEach(s => chart.removeSeries(s)); sinyalSeriler = [];
+  sinyalCizgiler.forEach(p => mum.removePriceLine(p)); sinyalCizgiler = [];
+  mum.setMarkers([]);
+  const oz = $("#sinyalOzet");
+  if (!aktif.sinyal || !sinyalVeri) { oz.hidden = true; return; }
+  if (aralik.sn !== 3600) { oz.hidden = false; oz.innerHTML = "<b>Time to Go Sinyal</b> yalnız <b>1s</b> grafikte görünür"; return; }
+  const liste = (sinyalVeri.s || {})[sembol] || [], ilk = bars.length ? bars[0].time : 0, son = bars.length ? bars[bars.length - 1].time : 0;
+  const isaret = [], L = LightweightCharts.LineStyle;
+  const parca = (t1, t2, p, renk, stil) => { const s = chart.addLineSeries({color: renk, lineWidth: 2, lineStyle: stil, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false}); s.setData([{time: t1, value: p}, {time: t2, value: p}]); sinyalSeriler.push(s); };
+  const SON = {Z: ["✓ ZIEL", "#26a69a"], T: ["✓ ZIEL ½", "#26a69a"], S: ["✗ STOP", "#ef5350"], X: ["⏱ 48S", "#b2b5be"]};
+  for (const [t, yon, g, st, tp1, tp2, sn, ct] of liste) {
+    const t1 = t + TZ; if (t1 < ilk) continue;
+    const sh = yon < 0, t2 = ct ? ct + TZ : son;
+    isaret.push({time: t1, position: sh ? "aboveBar" : "belowBar", color: sh ? "#ff2bd6" : "#39ff88", shape: sh ? "arrowDown" : "arrowUp", text: sh ? "EINSTIEG SHORT" : "EINSTIEG LONG", size: 2});
+    if (t2 > t1) { parca(t1, t2, g, "#d1d4dc", L.Solid); parca(t1, t2, st, "#ef5350", L.Dashed); parca(t1, t2, tp2, "#26a69a", L.Dashed); }
+    if (sn !== "A" && SON[sn]) isaret.push({time: t2, position: sh ? "belowBar" : "aboveBar", color: SON[sn][1], shape: "circle", text: SON[sn][0], size: 1});
+    if (sn === "A") {
+      sinyalCizgiler.push(mum.createPriceLine({price: g, color: "#d1d4dc", lineWidth: 1, lineStyle: L.Solid, title: "Einstieg", axisLabelVisible: true}));
+      sinyalCizgiler.push(mum.createPriceLine({price: st, color: "#ef5350", lineWidth: 1, lineStyle: L.Dashed, title: "Stop", axisLabelVisible: true}));
+      sinyalCizgiler.push(mum.createPriceLine({price: tp1, color: "#80cbc4", lineWidth: 1, lineStyle: L.Dotted, title: "Ziel 1 (½)", axisLabelVisible: true}));
+      sinyalCizgiler.push(mum.createPriceLine({price: tp2, color: "#26a69a", lineWidth: 1, lineStyle: L.Dashed, title: "Ziel 2", axisLabelVisible: true}));
+    }
+  }
+  isaret.sort((a, b) => a.time - b.time);
+  mum.setMarkers(isaret);
+  const kap = liste.filter(x => x[6] !== "A" && x[0] + TZ >= ilk), kaz = kap.filter(x => x[8] > 0).length, top = kap.reduce((a, x) => a + (x[8] || 0), 0);
+  const acik = liste.some(x => x[6] === "A");
+  oz.hidden = false;
+  oz.innerHTML = `<b>Time to Go Sinyal · ${esc(sembol)} · 1s</b><br>Sinyal: ${kap.length + (acik ? 1 : 0)}${acik ? ' · <span class="y">1 açık</span>' : ""}<br>` +
+    (kap.length ? `Treffer: <span class="${kaz / kap.length >= .5 ? "y" : "k"}">%${Math.round(kaz / kap.length * 100)}</span> · Summe: <span class="${top >= 0 ? "y" : "k"}">${top >= 0 ? "+" : ""}${top.toFixed(1)}R</span>` : "Kapanan sinyal yok");
+}
+sinyalYukle();
+setInterval(sinyalYukle, 10 * 60000);
 setInterval(() => { const n = document.getElementById("nokta"); if (n) n.textContent = [".", "..", "...", ""][Math.floor(Date.now() / 1000) % 4]; }, 1000);
 setInterval(() => { ttgKart(); ttgGrafik(); }, 60000);
 
@@ -967,7 +1013,7 @@ function gostergeListeKur() {
   $("#gostergeListe").innerHTML = h || '<div class="gr">Sonuç yok</div>';
   document.querySelectorAll(".og").forEach(o => o.onclick = () => {
     aktif[o.dataset.k] = !aktif[o.dataset.k]; kayitYaz("ttg_gosterge", aktif);
-    gostergeleriKur(); ttgGrafik(); pivotCiz(); lejant(); gostergeListeKur();
+    gostergeleriKur(); ttgGrafik(); sinyalCiz(); pivotCiz(); lejant(); gostergeListeKur();
   });
 }
 function modalKapat() { $("#modal").hidden = true; }
