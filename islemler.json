@@ -1,6 +1,23 @@
 {
-  "guncelleme": "2026-11-15T03:02:49+03:00",
-  "islemler": [],
+  "guncelleme": "2026-11-17T16:02:09+03:00",
+  "islemler": [
+    {
+      "coin": "TIA",
+      "yon": "SHORT",
+      "alt": 0.35692145,
+      "ust": 0.35727855,
+      "stop": 0.365,
+      "hedef": 0.3413,
+      "bitis": "2026-11-19T16:00:56+03:00",
+      "not": "Time to Go sinyali. Piyasa emriyle girildi; yarısı 0.3511 seviyesinde kapanır, sonra stop başa baş.",
+      "yayin": "2026-11-17T16:02:09+03:00",
+      "sistem": "ttg2",
+      "girildi": {
+        "zaman": "2026-11-17T16:00:56+03:00",
+        "fiyat": 0.3571
+      }
+    }
+  ],
   "iptaller": [
     {
       "coin": "TIA",
