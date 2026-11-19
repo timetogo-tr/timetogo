@@ -1,5 +1,5 @@
 {
-  "guncelleme": "2026-11-19T15:02:00+03:00",
+  "guncelleme": "2026-11-19T18:21:06+03:00",
   "islemler": [
     {
       "coin": "WIF",
@@ -16,7 +16,8 @@
       "girildi": {
         "zaman": "2026-11-19T15:00:59+03:00",
         "fiyat": 0.1348
-      }
+      },
+      "tp1_ok": true
     }
   ],
   "iptaller": [
