@@ -1,24 +1,6 @@
 {
-  "guncelleme": "2026-11-19T19:01:09+03:00",
+  "guncelleme": "2026-11-19T20:09:14+03:00",
   "islemler": [
-    {
-      "coin": "WIF",
-      "yon": "SHORT",
-      "alt": 0.1347326,
-      "ust": 0.1348674,
-      "stop": 0.1375,
-      "hedef": 0.1294,
-      "tp1": 0.1327,
-      "bitis": "2026-11-21T15:00:59+03:00",
-      "not": "",
-      "yayin": "2026-11-19T15:02:00+03:00",
-      "sistem": "ttg2",
-      "girildi": {
-        "zaman": "2026-11-19T15:00:59+03:00",
-        "fiyat": 0.1348
-      },
-      "tp1_ok": true
-    },
     {
       "coin": "DOT",
       "yon": "SHORT",
@@ -38,6 +20,12 @@
     }
   ],
   "iptaller": [
+    {
+      "coin": "WIF",
+      "yon": "SHORT",
+      "neden": "TP1 ✓ · TP2 ✓ hedef geldi",
+      "zaman": "2026-11-19T20:09:14+03:00"
+    },
     {
       "coin": "TIA",
       "yon": "SHORT",
@@ -91,12 +79,6 @@
       "yon": "SHORT",
       "neden": "girişe gelmeden hedefe gitti",
       "zaman": "2026-11-14T05:32:20+03:00"
-    },
-    {
-      "coin": "ETC",
-      "yon": "SHORT",
-      "neden": "girişe gelmeden hedefe gitti",
-      "zaman": "2026-11-14T05:18:03+03:00"
     }
   ]
 }
